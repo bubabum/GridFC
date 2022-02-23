@@ -3,6 +3,12 @@
 const config = {
 	dX: 0,
 	dY: 0,
+	step: 10,
+	tile: {
+		width: 585,
+		height: 585,
+		joint: 15,
+	},
 }
 
 let ctx;
@@ -28,7 +34,7 @@ function addPlane() {
 	let planeWidth = Number(document.getElementById('planeWidth').value);
 	let planeHeight = Number(document.getElementById('planeHeight').value);
 	plane = {
-		width: 5250,
+		width: 5300,
 		height: 2850,
 		excisions: [],
 		tiles: [],
@@ -37,11 +43,15 @@ function addPlane() {
 }
 
 function addExcision() {
+	let excisionWidth = Number(document.getElementById('excisionWidth').value);
+	let excisionHeight = Number(document.getElementById('excisionHeight').value);
+	let excisionDX = Number(document.getElementById('excisionDX').value);
+	let excisionDY = Number(document.getElementById('excisionDY').value);
 	let excision = {
-		width: 2000,
-		height: 1500,
+		width: 1470,
+		height: 1310,
 		dX: 700,
-		dY: 500,
+		dY: 930,
 	}
 	excision.x = canvasPaddingX + excision.dX;
 	excision.y = canvasPaddingY + plane.height - excision.height - excision.dY;
@@ -49,7 +59,8 @@ function addExcision() {
 	renderCanvas();
 }
 
-function addStandartTiles() {
+function addTiles() {
+	let tile = config.tile;
 	plane.tiles = [];
 	let starPointX;
 	let starPointY;
@@ -63,17 +74,23 @@ function addStandartTiles() {
 	} else {
 		starPointY = canvasPaddingY + config.dY;
 	}
-	for (let i = starPointX; i < canvasPaddingX + plane.width - 15; i += standartTile.width - standartTile.joint) {
-		for (let j = starPointY; j < canvasPaddingY + plane.height - 15; j += standartTile.height - standartTile.joint) {
-			let tile = {
-				width: 585,
-				height: 585,
-				joint: 15,
+	let column = 0;
+	for (let i = starPointX; i < canvasPaddingX + plane.width - 15; i += config.tile.width - config.tile.joint) {
+		let row = 0;
+		for (let j = starPointY; j < canvasPaddingY + plane.height - 15; j += config.tile.height - config.tile.joint) {
+			let newTile = {
+				width: tile.width,
+				height: tile.height,
+				joint: tile.joint,
 				x: i,
 				y: j,
+				column: column,
+				row: row,
 			};
-			plane.tiles.push(tile);
+			row++;
+			plane.tiles.push(newTile);
 		}
+		column++;
 	}
 	// plane.tiles.forEach(element => {
 	// 	element.x += config.dX;
@@ -86,34 +103,56 @@ function checkExcisions() {
 	for (let i = 0; i < plane.tiles.length; i++) {
 		plane.excisions.forEach(element => {
 			let tile = plane.tiles[i];
+			tile.del = false;
 			let excision = element;
-			if (excision.x < tile.x && excision.x + excision.width > tile.x + tile.width && excision.y < tile.y && excision.y + excision.height > tile.y + tile.height) {
-				plane.tiles[i].del = true;
+			if (excision.x <= tile.x + tile.joint && excision.x + excision.width >= tile.x + tile.width - tile.joint && excision.y <= tile.y + tile.joint && excision.y + excision.height >= tile.y + tile.height - tile.joint) {
+				tile.del = true;
 			}
 		});
 	}
 }
 
-function changeDelta(id) {
+function moveTiles(btn) {
+	let id = btn.id;
+	if (!btn.id) {
+		id = btn.parentElement.id;
+	}
+	const step = config.step
 	switch (id) {
 		case 'moveUp':
-			config.dY -= 5; break;
+			config.dY -= step; break;
 		case 'moveLeft':
-			config.dX -= 5; break;
+			config.dX -= step; break;
 		case 'moveRight':
-			config.dX += 5; break;
+			config.dX += step; break;
 		case 'moveDown':
-			config.dY += 5; break;
+			config.dY += step; break;
 	}
+	addTiles();
+}
 
-	addStandartTiles();
+function centerX() {
+	let tilesWidth = plane.tiles.filter((element) => element.row === 0).map((element) => element.width).reduce((previousValue, currentValue) => previousValue + currentValue - config.tile.joint);
+	config.dX = Math.floor(((canvasPaddingX * 2) + plane.width - tilesWidth) / 20) * 10 - canvasPaddingX;
+	addTiles();
+}
+
+function centerY() {
+	let tilesHeight = plane.tiles.filter((element) => element.column === 0).map((element) => element.height).reduce((previousValue, currentValue) => previousValue + currentValue - config.tile.joint);
+	config.dY = Math.floor(((canvasPaddingY * 2) + plane.height - tilesHeight) / 20) * 10 - canvasPaddingY;
+	addTiles();
+}
+
+function changeStep(value) {
+	config.step = Number(value);
 }
 
 function renderCanvas() {
+	renderExcisionBtn();
 	checkExcisions();
 	ctx.fillStyle = "#FFFFFF";
 	ctx.fillRect(0, 0, plane.width + canvasPaddingX * 2, plane.height + canvasPaddingY * 2);
-	ctx.lineWidth = 5;
+	ctx.lineWidth = 10;
 	plane.tiles.forEach(element => {
 		renderTile(element);
 	});
@@ -128,8 +167,21 @@ function renderCanvas() {
 	ctx.fillText(`${plane.height}`, canvasPaddingX / 2, canvasPaddingY + plane.height / 2);
 }
 
+function renderExcisionBtn() {
+	const excisions = document.getElementById('excisions');
+	excisions.innerHTML = '';
+	if (plane.excisions.length === 0) return
+	for (let i = 0; i < plane.excisions.length; i++) {
+		let btn = document.createElement('button');
+		btn.dataset.id = i;
+		btn.innerHTML = `Видалити виріз ${i + 1}: ${plane.excisions[i].width} ${plane.excisions[i].height} ${plane.excisions[i].dX} ${plane.excisions[i].dY}`;
+		excisions.appendChild(btn);
+	}
+}
+
+
 function renderExcision(excision) {
-	ctx.strokeStyle = "#00AA00";
+	ctx.strokeStyle = "#fcba03";
 	ctx.strokeRect(excision.x, excision.y, excision.width, excision.height);
 }
 
@@ -146,6 +198,20 @@ function renderTile(tile) {
 	ctx.fillText(`${tile.width} x ${tile.height}`, tile.x + 100, tile.y + tile.height / 2);
 }
 
+function deleteExcision(id) {
+	plane.excisions.splice(id, 1);
+	addTiles();
+}
+
+function setTile() {
+	const tileWidth = Number(document.getElementById('tileWidth').value);
+	const tileHeight = Number(document.getElementById('tileHeight').value);
+	const tileJoint = Number(document.getElementById('tileJoint').value);
+	config.tile.width = tileWidth;
+	config.tile.height = tileHeight;
+	config.tile.joint = tileJoint;
+}
+
 document.addEventListener('DOMContentLoaded', function (event) {
 	document.getElementById('addPlane').addEventListener('click', function (event) {
 		addPlane();
@@ -153,10 +219,30 @@ document.addEventListener('DOMContentLoaded', function (event) {
 	document.getElementById('addExcision').addEventListener('click', function (event) {
 		addExcision();
 	});
+	document.getElementById('excisions').addEventListener('click', function (event) {
+		deleteExcision(event.target.dataset.id);
+	});
 	document.getElementById('addStandartTiles').addEventListener('click', function (event) {
-		addStandartTiles();
+		config.dX = 0;
+		config.dY = 0;
+		addTiles();
+	});
+	document.getElementById('addTiles').addEventListener('click', function (event) {
+		config.dX = 0;
+		config.dY = 0;
+		setTile();
+		addTiles();
+	});
+	document.querySelector('.control__step').addEventListener('click', function (event) {
+		if (event.target.classList.contains('step')) changeStep(event.target.value);
 	});
 	document.querySelector('.move').addEventListener('click', function (event) {
-		changeDelta(event.target.id);
+		moveTiles(event.target);
+	});
+	document.getElementById('centerX').addEventListener('click', function (event) {
+		centerX();
+	});
+	document.getElementById('centerY').addEventListener('click', function (event) {
+		centerY();
 	});
 });

@@ -2,37 +2,79 @@
 <html lang="en">
 
 <head>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>GridFC</title>
 	<link rel="stylesheet" type="text/css" href="style.css">
+	<script src="https://kit.fontawesome.com/3aaa835869.js" crossorigin="anonymous"></script>
 	<script defer src="script.js"></script>
 </head>
 
 <body>
 	<div id="app" class="app">
 		<div class="control">
-			<div class="plane">
-				<input id="planeWidth" class="" type="number">
-				<label for="planeWidth" class="">Ширина, мм</label>
-				<input id="planeHeight" class="" type="number">
-				<label for="planeHeight" class="">Висота, мм</label>
-				<button id="addPlane">Додати площину</button>
+			<div class="plane control_item">
+				<div class="control_inputs">
+					<input id="planeWidth" class="" type="number">
+					<label for="planeWidth" class="">Ширина, мм</label>
+					<input id="planeHeight" class="" type="number">
+					<label for="planeHeight" class="">Висота, мм</label>
+				</div>
+				<button id="addPlane"><i class="fa-solid fa-plus"></i>Додати площину</button>
 			</div>
-			<div class="excisions">
-				<button id="addExcision">Додати виріз</button>
+			<div class="excisions control_item">
+				<div class="control_inputs">
+					<input id="excisionWidth" class="" type="number">
+					<label for="excisionWidth" class="">Ширина, мм</label>
+					<input id="excisionHeight" class="" type="number">
+					<label for="excisionHeight" class="">Висота, мм</label>
+					<input id="excisionDX" class="" type="number">
+					<label for="excisionDX" class="">dX</label>
+					<input id="excisionDY" class="" type="number">
+					<label for="excisionDY" class="">dY</label>
+				</div>
+				<button id="addExcision"><i class="fa-solid fa-plus"></i>Додати виріз</button>
+				<div id="excisions" class="excisions__btns"></div>
 			</div>
-			<div class="tiles">
+			<div class="tiles control_item">
+				<div class="control_inputs">
+					<input id="tileWidth" class="" type="number">
+					<label for="tileWidth" class="">Ширина, мм</label>
+					<input id="tileHeight" class="" type="number">
+					<label for="tileHeight" class="">Висота, мм</label>
+					<input id="tileJoint" class="" type="number" value="15">
+					<label for="tileJoint" class="">Стик, мм</label>
+				</div>
+				<button id="addTiles">Користувацькі</button>
 				<button id="addStandartTiles">Стандартні</button>
 			</div>
-			<div class="move">
-				<button id="moveUp">Вгору</button>
-				<div class="leftright">
-					<button id="moveLeft">Ліво</button>
-					<button id="moveRight">Право</button>
+			<div class="control_item">
+				<div class="control__step">
+					<input type="radio" id="step1" class="step" name="step" value="5">
+					<label for="step1">5</label>
+					<input type="radio" id="step2" class="step" name="step" value="10" checked>
+					<label for="step2">10</label>
+					<input type="radio" id="step3" class="step" name="step" value="50">
+					<label for="step3">50</label>
+					<input type="radio" id="step4" class="step" name="step" value="100">
+					<label for="step4">100</label>
 				</div>
-				<button id="moveDown">Вниз</button>
+				<div class="move">
+					<button id="moveUp"><i class="fa-solid fa-angle-up"></i></button>
+					<div class="leftright">
+						<button id="moveLeft"><i class="fa-solid fa-angle-left"></i></button>
+						<button id="moveRight"><i class="fa-solid fa-angle-right"></i></button>
+					</div>
+					<button id="moveDown"><i class="fa-solid fa-angle-down"></i></button>
+				</div>
+				<div class="center">
+					<button id="centerX"><i class="fa-solid fa-left-right"></i>Центрувати X</button>
+					<button id="centerY"><i class="fa-solid fa-up-down"></i>Центрувати Y</button>
+				</div>
 			</div>
 		</div>
 		<div class="canvas"></div>

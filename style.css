@@ -15,7 +15,7 @@ body{
 	-ms-text-size-adjust: 100%;
 	-moz-text-size-adjust: 100%;
 	-webkit-text-size-adjust: 100%;
-   font-family: 'Mochiy Pop P One', sans-serif;
+   font-family: 'Roboto', sans-serif;
 	padding: 0;
 	margin: 0;
 	background-color: #404040;
@@ -42,14 +42,98 @@ canvas {
 	max-height: 950px;
 	margin: 0 auto;
 }
+.control	{
+	width: 350px;
+}
+.control_item {
+	margin: 25px;
+	padding: 10px;
+	border: 1px solid #888;
+}
+.control_inputs {
+	display: grid;
+	grid-template-columns: repeat(2, 50%);
+	align-items: center;
+}
+.control_item input,
+.control_item label{
+	margin: 0 0 5px;
+}
+.control_item input{
+	margin: 0 0 5px;
+}
+.control_item label{
+	font-size: 16px;
+	padding-left: 5px;
+	color: #888;
+}
+.control_item button{
+	background-color: #AAA;
+	color: #000;
+	border: none;
+	padding: 5px 0;
+	width: 150px;
+	margin: 0 auto 5px;
+	font-weight: 700;
+}
+.control_item i {
+	padding-right: 5px;
+}
+.control_item :last-child {
+	margin-bottom: 0;
+}
 .plane {
 	display: flex;
 	flex-direction: column;
 }
-.move {
+.excisions {
 	display: flex;
 	flex-direction: column;
 }
+.excisions__btns {
+	padding: 5px 0;
+}
+.excisions__btns button{
+	width: 100%;
+}
+.control__step {
+	display: flex;
+	justify-content: space-between;
+}
+.control__step label {
+	padding-right: 15px;
+}
+.control__step :last-child {
+	padding-right: 0;
+}
+.move {
+	display: flex;
+	flex-direction: column;
+	margin-bottom: 5px;
+}
+.move button {
+	width: 25px;
+	height: 25px;
+}
+.move i {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding-right: 0;
+}
 .leftright {
 	display: flex;
+}
+.center {
+	margin: 10px 0 0;
+	display: flex;
+	justify-content: space-around;
+	align-items: center;
+}
+.center button {
+	width: 120px;
+	margin: 0;
+}
+.center i {
+	margin: auto;
 }
