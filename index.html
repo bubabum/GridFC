@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>GridFC</title>
+	<link rel="stylesheet" type="text/css" href="style.css">
+	<script defer src="script.js"></script>
+</head>
+
+<body>
+	<div id="app" class="app">
+		<div class="control">
+			<div class="plane">
+				<input id="planeWidth" class="" type="number">
+				<label for="planeWidth" class="">Ширина, мм</label>
+				<input id="planeHeight" class="" type="number">
+				<label for="planeHeight" class="">Висота, мм</label>
+				<button id="addPlane">Додати площину</button>
+			</div>
+			<div class="excisions">
+				<button id="addExcision">Додати виріз</button>
+			</div>
+			<div class="tiles">
+				<button id="addStandartTiles">Стандартні</button>
+			</div>
+			<div class="move">
+				<button id="moveUp">Вгору</button>
+				<div class="leftright">
+					<button id="moveLeft">Ліво</button>
+					<button id="moveRight">Право</button>
+				</div>
+				<button id="moveDown">Вниз</button>
+			</div>
+		</div>
+		<div class="canvas"></div>
+	</div>
+</body>
+
+</html>
