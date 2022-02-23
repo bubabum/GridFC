@@ -37,10 +37,16 @@ h1,h2,h3,h4,h5,h6{font-size: inherit;font-weight: 400;}
 	display: flex;
 }
 canvas {
-   max-width: 1600px;
-   padding: 25px;
+   max-width: 1500px;
+   padding: 25px 25px;
 	max-height: 950px;
 	margin: 0 auto;
+}
+button {
+	transition: 0.3s;
+}
+button:hover {
+	opacity: 0.7;
 }
 .control	{
 	width: 350px;
@@ -76,6 +82,9 @@ canvas {
 	margin: 0 auto 5px;
 	font-weight: 700;
 }
+.tiles button {
+	margin: 0 64px 5px;
+}
 .control_item i {
 	padding-right: 5px;
 }
@@ -102,27 +111,30 @@ canvas {
 }
 .control__step label {
 	padding-right: 15px;
+	font-weight: 700;
 }
 .control__step :last-child {
 	padding-right: 0;
 }
 .move {
 	display: flex;
-	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	/* flex-direction: column; */
 	margin-bottom: 5px;
 }
 .move button {
 	width: 25px;
 	height: 25px;
+	margin: 5px;
 }
 .move i {
-	display: flex;
-	align-items: center;
-	justify-content: center;
 	padding-right: 0;
+	margin: 0 0 0 2px;
 }
 .leftright {
 	display: flex;
+	flex-direction: column;
 }
 .center {
 	margin: 10px 0 0;
@@ -136,4 +148,14 @@ canvas {
 }
 .center i {
 	margin: auto;
+}
+.trim {
+	margin: 10px 0 0;
+	display: flex;
+}
+.trim button{
+	margin: 0 10px;
+}
+.trim i{
+	margin: 0 0 0 5px;
 }

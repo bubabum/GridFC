@@ -49,8 +49,15 @@
 					<input id="tileJoint" class="" type="number" value="15">
 					<label for="tileJoint" class="">Стик, мм</label>
 				</div>
-				<button id="addTiles">Користувацькі</button>
-				<button id="addStandartTiles">Стандартні</button>
+				<button id="addTiles"><i class="fa-solid fa-vector-square"></i>Користувацькі</button>
+				<button id="addStandartTiles"><i class="fa-solid fa-square"></i>Стандартні</button>
+				<div class="control_inputs">
+					<input id="columns" class="" type="number" value="5">
+					<label for="columns" class="">Кількість по X</label>
+					<input id="rows" class="" type="number" value="5">
+					<label for="rows" class="">Кількість по Y</label>
+				</div>
+				<!-- <button id="addTiles"><i class="fa-solid fa-table-cells"></i>Сітка</button> -->
 			</div>
 			<div class="control_item">
 				<div class="control__step">
@@ -64,17 +71,25 @@
 					<label for="step4">100</label>
 				</div>
 				<div class="move">
-					<button id="moveUp"><i class="fa-solid fa-angle-up"></i></button>
+					<button id="moveLeft"><i class="fa-solid fa-angle-left"></i></button>
 					<div class="leftright">
-						<button id="moveLeft"><i class="fa-solid fa-angle-left"></i></button>
-						<button id="moveRight"><i class="fa-solid fa-angle-right"></i></button>
+						<button id="moveUp"><i class="fa-solid fa-angle-up"></i></button>
+						<button id="moveDown"><i class="fa-solid fa-angle-down"></i></button>
 					</div>
-					<button id="moveDown"><i class="fa-solid fa-angle-down"></i></button>
+					<button id="moveRight"><i class="fa-solid fa-angle-right"></i></button>
 				</div>
 				<div class="center">
 					<button id="centerX"><i class="fa-solid fa-left-right"></i>Центрувати X</button>
 					<button id="centerY"><i class="fa-solid fa-up-down"></i>Центрувати Y</button>
 				</div>
+				<div class="trim">
+					<button id="trim"><i class="fa-solid fa-crop-simple"></i></button>
+					<button id="trimLeft"><i class="fa-solid fa-angles-right"></i></button>
+					<button id="trimUp"><i class="fa-solid fa-angles-down"></i></button>
+					<button id="trimRight"><i class="fa-solid fa-angles-left"></i></button>
+					<button id="trimDown"><i class="fa-solid fa-angles-up"></i></button>
+				</div>
+				<button id="sizeLeft">Розмір вліво</button>
 			</div>
 		</div>
 		<div class="canvas"></div>
