@@ -1,8 +1,7 @@
 "use strict";
 
 const config = {
-	dX: 0,
-	dY: 0,
+	activePlane: 0,
 	step: 10,
 	tile: {
 		width: 585,
@@ -12,34 +11,105 @@ const config = {
 }
 
 let ctx;
-let plane = {}
-let standartTile = {
-	width: 585,
-	height: 585,
-	joint: 15,
-}
+let planes = [];
 const canvasPaddingX = 700;
 const canvasPaddingY = 700;
 
 function addCanvas(plane) {
+	removeCanvas();
 	const canvas = document.createElement('canvas');
+	const canvasElement = document.querySelector('.canvas');
+	canvas.id = 'canvas';
 	ctx = canvas.getContext('2d');
 	canvas.width = plane.width + canvasPaddingX * 2;
 	canvas.height = plane.height + canvasPaddingY * 2;
-	document.querySelector('.canvas').appendChild(canvas);
+	// canvas.width = parseInt(window.getComputedStyle(document.querySelector('.canvas')).width);
+	// canvas.height = parseInt(window.getComputedStyle(document.querySelector('.canvas')).height);
+	//	console.log(document.documentElement.clientWidth);
+	const width = document.createElement('div');
+	width.classList.add('canvas__size', 'canvas__size_width');
+	width.innerHTML = plane.width;
+	const height = document.createElement('div');
+	height.classList.add('canvas__size', 'canvas__size_height');
+	height.innerHTML = plane.height;
+	canvasElement.appendChild(canvas);
+	width.style.top = (parseInt(window.getComputedStyle(document.querySelector('.canvas')).height) - parseInt(window.getComputedStyle(document.getElementById('canvas')).height)) / 2 + 20 + 'px';
+	height.style.left = (parseInt(window.getComputedStyle(document.querySelector('.canvas')).width) - parseInt(window.getComputedStyle(document.getElementById('canvas')).width)) / 2 + 20 + 'px';
+	canvasElement.appendChild(width);
+	canvasElement.appendChild(height);
+	renderCanvas();
+}
+
+function removeCanvas() {
+	document.querySelector('.canvas').innerHTML = '';
+}
+
+function renderTabs() {
+	const planesElement = document.querySelector('.planes');
+	planesElement.innerHTML = '';
+	if (planes.length === 0) return
+	planes.forEach(item => {
+		let div = document.createElement('div');
+		div.dataset.id = planes.indexOf(item);
+		div.classList.add('planes__item')
+		if (planes.indexOf(item) === config.activePlane) {
+			div.classList.add('active')
+		}
+		div.innerHTML = `Площина ${planes.indexOf(item) + 1} <i class="fa-solid fa-xmark"></i>`;
+		planesElement.appendChild(div);
+	})
+}
+
+function closePlaneTab(id) {
+	id = Number(id);
+	planes.splice(id, 1);
+	renderTabs();
+	if (planes.length === 0) {
+		removeCanvas();
+		return
+	}
+	if (config.activePlane === id) { //якщо активна вкладка
+		if (id === planes.length) { //якщо остання
+			changeActivePlane(id - 1);
+		} else { //якщо не остання
+			changeActivePlane(id);
+		}
+	} else {
+		if (id < config.activePlane) {
+			changeActivePlane(config.activePlane - 1);
+		}
+	}
+
+}
+
+function changeActivePlane(id) {
+	id = Number(id);
+	config.activePlane = id;
+	changeActivePlaneTab();
+}
+
+function changeActivePlaneTab() {
+	let planesTabs = document.querySelectorAll('.planes__item');
+	planesTabs.forEach(item => item.classList.remove('active'));
+	planesTabs[config.activePlane].classList.add('active');
+	//addCanvas(planes[config.activePlane]);
 	renderCanvas();
 }
 
 function addPlane() {
 	let planeWidth = Number(document.getElementById('planeWidth').value);
 	let planeHeight = Number(document.getElementById('planeHeight').value);
-	plane = {
-		width: 3000,
-		height: 2850,
+	let plane = {
+		dX: 0,
+		dY: 0,
+		width: 5000,
+		height: 2000,
 		excisions: [],
 		tiles: [],
 	}
-	addCanvas(plane);
+	planes.push(plane);
+	renderTabs();
+	changeActivePlane(planes.length - 1);
 }
 
 function addExcision() {
@@ -47,37 +117,51 @@ function addExcision() {
 	let excisionHeight = Number(document.getElementById('excisionHeight').value);
 	let excisionDX = Number(document.getElementById('excisionDX').value);
 	let excisionDY = Number(document.getElementById('excisionDY').value);
+	// let excision = {
+	// 	width: 200,
+	// 	height: 200,
+	// 	dX: 700,
+	// 	dY: 930,
+	// }
 	let excision = {
-		width: 1470,
-		height: 1310,
-		dX: 700,
-		dY: 930,
+		width: 500,
+		height: 500,
+		dX: excisionDX,
+		dY: excisionDY,
 	}
 	excision.x = canvasPaddingX + excision.dX;
-	excision.y = canvasPaddingY + plane.height - excision.height - excision.dY;
-	plane.excisions.push(excision);
+	excision.y = canvasPaddingY + planes[config.activePlane].height - excision.height - excision.dY;
+	planes[config.activePlane].excisions.push(excision);
+	renderCanvas();
+}
+
+function deleteExcision(id) {
+	planes[config.activePlane].excisions.splice(id, 1);
 	renderCanvas();
 }
 
 function addTiles() {
 	let tile = config.tile;
+	let plane = planes[config.activePlane];
 	plane.tiles = [];
-	let starPointX;
-	let starPointY;
-	if (config.dX > 0) {
-		starPointX = canvasPaddingX - 570 + config.dX;
+	let dX = plane.dX;
+	let dY = plane.dY;
+	let starPointX = dX;
+	let starPointY = dY;
+	// if (dX > 0) {
+	// 	starPointX = tile.width - dX;
+	// } else {
+	// 	starPointX = dX;
+	// }
+	if (dY > 0) {
+		starPointY = tile.height + dY;
 	} else {
-		starPointX = canvasPaddingX + config.dX;
-	}
-	if (config.dY > 0) {
-		starPointY = canvasPaddingY - 570 + config.dY;
-	} else {
-		starPointY = canvasPaddingY + config.dY;
+		starPointY = dY;
 	}
 	let column = 0;
-	for (let i = starPointX; i < canvasPaddingX + plane.width - 15; i += config.tile.width - config.tile.joint) {
+	for (let i = starPointX; i < plane.width - tile.joint; i += tile.width - tile.joint) {
 		let row = 0;
-		for (let j = starPointY; j < canvasPaddingY + plane.height - 15; j += config.tile.height - config.tile.joint) {
+		for (let j = starPointY; j < plane.height - tile.joint; j += tile.height - tile.joint) {
 			let newTile = {
 				width: tile.width,
 				height: tile.height,
@@ -97,11 +181,15 @@ function addTiles() {
 }
 
 function checkExcisions() {
+	let plane = planes[config.activePlane];
 	for (let i = 0; i < plane.tiles.length; i++) {
-		plane.excisions.forEach(element => {
+		if (plane.excisions.length === 0) {
+			plane.tiles[i].del = false;
+		}
+		plane.excisions.forEach(item => {
 			let tile = plane.tiles[i];
 			tile.del = false;
-			let excision = element;
+			let excision = item;
 			if (excision.x <= tile.x + tile.joint && excision.x + excision.width >= tile.x + tile.width - tile.joint && excision.y <= tile.y + tile.joint && excision.y + excision.height >= tile.y + tile.height - tile.joint) {
 				tile.del = true;
 			}
@@ -141,13 +229,13 @@ function moveTiles(btn) {
 	const step = config.step
 	switch (id) {
 		case 'moveUp':
-			config.dY -= step; break;
+			planes[config.activePlane].dY += step; break;
 		case 'moveLeft':
-			config.dX -= step; break;
+			planes[config.activePlane].dX -= step; break;
 		case 'moveRight':
-			config.dX += step; break;
+			planes[config.activePlane].dX += step; break;
 		case 'moveDown':
-			config.dY += step; break;
+			planes[config.activePlane].dY -= step; break;
 	}
 	addTiles();
 }
@@ -219,16 +307,78 @@ function centerY() {
 	addTiles();
 }
 
-function changeStep(value) {
-	config.step = Number(value);
+function changeStep(input) {
+	let newStep;
+	switch (Number(input.value)) {
+		case 0:
+			newStep = 5;
+			break;
+		case 1:
+			newStep = 10;
+			break;
+		case 2:
+			newStep = 50;
+			break;
+		case 3:
+			newStep = 100;
+			break;
+	}
+	config.step = newStep;
+	document.getElementById('stepLabel').innerHTML = `Крок ${newStep}мм`;
 }
 
 function renderCanvas() {
-	renderExcisionBtn();
+	let canvas = document.querySelector('.canvas');
+	canvas.innerHTML = '';
+	let plane = planes[config.activePlane];
+	let ratio = (parseInt(window.getComputedStyle(canvas).width) - 100) / plane.width;
+	let planeElement = document.createElement('div');
+	planeElement.classList.add('canvas__plane');
+	planeElement.style.width = parseInt(window.getComputedStyle(canvas).width) - 100 + 'px';
+	planeElement.style.height = (parseInt(window.getComputedStyle(canvas).width) - 100) * plane.height / plane.width + 'px';
+	let tilesElement = document.createElement('div');
+	tilesElement.classList.add('canvas__tiles');
+	planeElement.appendChild(tilesElement);
+	plane.tiles.forEach(item => {
+		renderTile(item, ratio, tilesElement);
+	});
+	canvas.appendChild(planeElement);
+}
+
+function renderTile(tile, ratio, tilesElement) {
+	if (tile.del === true) return
+	let tileElement = document.createElement('div');
+	tileElement.classList.add('canvas__tile');
+	tileElement.style.top = tile.y * ratio + 'px';
+	tileElement.style.left = tile.x * ratio + 'px';
+	tileElement.style.width = tile.width * ratio + 'px';
+	tileElement.style.height = tile.height * ratio + 'px';
+	let mirrorElement = document.createElement('div');
+	mirrorElement.classList.add('canvas__mirror');
+	mirrorElement.style.top = tile.joint * ratio + 'px';
+	mirrorElement.style.left = tile.joint * ratio + 'px';
+	mirrorElement.style.width = (tile.width - tile.joint * 2) * ratio + 'px';
+	mirrorElement.style.height = (tile.height - tile.joint * 2) * ratio + 'px';
+	mirrorElement.innerHTML = `${tile.width}<i class="fa-solid fa-xmark"></i>${tile.height}`;
+	tileElement.appendChild(mirrorElement);
+	tilesElement.appendChild(tileElement);
+}
+
+function renderCanvas1() {
+	renderExcisionTabs();
 	checkExcisions();
+	let plane = planes[config.activePlane];
+	// let ratioX = (document.documentElement.clientWidth - 240) / (plane.width + canvasPaddingX * 2);
+	// let ratioY = document.documentElement.clientHeight / (plane.height + canvasPaddingY * 2);
+	// ctx.save();
+	// ctx.scale(ratioX, ratioX);
 	ctx.fillStyle = "#FFFFFF";
 	ctx.fillRect(0, 0, plane.width + canvasPaddingX * 2, plane.height + canvasPaddingY * 2);
-	ctx.lineWidth = 10;
+	if (plane.width > plane.height) {
+		ctx.lineWidth = (plane.width + canvasPaddingX * 2) / 800;
+	} else {
+		ctx.lineWidth = (plane.height + canvasPaddingY * 2) / 800;
+	}
 	plane.tiles.forEach(element => {
 		renderTile(element);
 	});
@@ -238,23 +388,22 @@ function renderCanvas() {
 	ctx.strokeStyle = "#AA0000";
 	ctx.strokeRect(canvasPaddingX, canvasPaddingY, plane.width, plane.height);
 	ctx.fillStyle = "#000000";
-	ctx.font = "120px san-serif";
-	ctx.fillText(`${plane.width}`, canvasPaddingX + plane.width / 2, canvasPaddingY / 2);
-	ctx.fillText(`${plane.height}`, canvasPaddingX / 2, canvasPaddingY + plane.height / 2);
-	plane.tiles.forEach(item => {
-		renderActiveTile(item);
-	});
+	ctx.font = "small-caps 120px Arial";
+	// ctx.fillText(`${plane.width}`, canvasPaddingX + plane.width / 2, canvasPaddingY / 2);
+	// ctx.fillText(`${plane.height}`, canvasPaddingX / 2, canvasPaddingY + plane.height / 2);
+	// ctx.restore();
 }
 
-function renderExcisionBtn() {
+function renderExcisionTabs() {
 	const excisions = document.getElementById('excisions');
+	let plane = planes[config.activePlane];
 	excisions.innerHTML = '';
 	if (plane.excisions.length === 0) return
 	for (let i = 0; i < plane.excisions.length; i++) {
-		let btn = document.createElement('button');
-		btn.dataset.id = i;
-		btn.innerHTML = `<i class="fa-solid fa-trash"></i> Видалити виріз ${i + 1}: ${plane.excisions[i].width} ${plane.excisions[i].height} ${plane.excisions[i].dX} ${plane.excisions[i].dY}`;
-		excisions.appendChild(btn);
+		let div = document.createElement('div');
+		div.classList.add('excisions__tab')
+		div.innerHTML = `Виріз ${i + 1}: ${plane.excisions[i].width} ${plane.excisions[i].height} ${plane.excisions[i].dX} ${plane.excisions[i].dY} <i data-id="${i}" class="fa-solid fa-xmark"></i>`;
+		excisions.appendChild(div);
 	}
 }
 
@@ -263,26 +412,29 @@ function renderExcision(excision) {
 	ctx.strokeRect(excision.x, excision.y, excision.width, excision.height);
 }
 
-function renderTile(tile) {
+function renderTile1(tile) {
 	if (tile.del === true) return
-	ctx.fillStyle = "#DDDDDD";
+	ctx.fillStyle = "#AAAAAA";
 	ctx.fillRect(tile.x, tile.y, tile.width, tile.height);
-	ctx.fillStyle = "#FAFAFA";
-	ctx.fillRect(tile.x + 15, tile.y + 15, tile.width - 30, tile.height - 30);
-	ctx.fillStyle = "#000000";
-	ctx.font = "60px san-serif";
-	ctx.fillText(`${tile.width}x${tile.height}`, tile.x + 100, tile.y + tile.height / 2);
+	if (tile.isActive) {
+		ctx.fillStyle = "#DFDFDF";
+	} else {
+		ctx.fillStyle = "#FAFAFA";
+	}
+	ctx.fillRect(tile.x + tile.joint, tile.y + tile.joint, tile.width - tile.joint * 2, tile.height - tile.joint * 2);
+	if (tile.isActive) {
+		ctx.fillStyle = "#000000";
+		ctx.font = "small-caps 60px Arial";
+		ctx.fillText(`${tile.width}x${tile.height}`, tile.x + 100, tile.y + tile.height / 2);
+	}
+
+
 }
 
 function renderActiveTile(tile) {
-	if (!tile.isActive) return
-	ctx.strokeStyle = "#79a884";
-	ctx.strokeRect(tile.x + 15, tile.y + 15, tile.width - 30, tile.height - 30);
-}
-
-function deleteExcision(id) {
-	plane.excisions.splice(id, 1);
-	addTiles();
+	// if (!tile.isActive) return
+	// ctx.strokeStyle = "#79a884";
+	// ctx.strokeRect(tile.x + tile.joint, tile.y + tile.joint, tile.width - tile.joint * 2, tile.height - tile.joint * 2);
 }
 
 function setTile() {
@@ -294,18 +446,110 @@ function setTile() {
 	config.tile.joint = tileJoint;
 }
 
-function getTile(event, canvas) {
-	let x = event.offsetX / parseInt(window.getComputedStyle(canvas).width) * (plane.width + canvasPaddingX * 2);
-	let y = event.offsetY / parseInt(window.getComputedStyle(canvas).height) * (plane.height + canvasPaddingY * 2);
-	plane.tiles.forEach(item => {
+function setStandartTile() {
+	config.tile.width = 585;
+	config.tile.height = 585;
+	config.tile.joint = 15;
+}
+
+function getTile(event) {
+	let x = event.offsetX / parseInt(window.getComputedStyle(document.getElementById('canvas')).width) * (planes[config.activePlane].width + canvasPaddingX * 2);
+	let y = event.offsetY / parseInt(window.getComputedStyle(document.getElementById('canvas')).height) * (planes[config.activePlane].height + canvasPaddingY * 2);
+	planes[config.activePlane].tiles.forEach(item => {
+		let isActive = item.isActive;
+		item.isActive = false;
 		if (item.x < x && item.x + item.width > x && item.y < y && item.y + item.height > y) {
-			item.isActive = !item.isActive;
+			item.isActive = !isActive;
 		}
 	})
 	renderCanvas();
 }
 
-function sizeLeft() {
+function tileTopIncrease() {
+	let row = plane.tiles.find(item => item.isActive === true).row;
+	plane.tiles.forEach(item => {
+		if (item.row === row) {
+			item.y -= 10;
+			item.height += 10;
+		}
+		if (item.row === row - 1) {
+			item.height -= 10;
+		}
+	})
+	renderCanvas();
+}
+
+function tileTopDecrease() {
+	let row = plane.tiles.find(item => item.isActive === true).row;
+	plane.tiles.forEach(item => {
+		if (item.row === row) {
+			item.y += 10;
+			item.height -= 10;
+		}
+		if (item.row === row - 1) {
+			item.height += 10;
+		}
+	})
+	renderCanvas();
+}
+
+function tileBottomIncrease() {
+	let row = plane.tiles.find(item => item.isActive === true).row;
+	plane.tiles.forEach(item => {
+		if (item.row === row) {
+			item.height += 10;
+		}
+		if (item.row === row + 1) {
+			item.y += 10;
+			item.height -= 10;
+		}
+	})
+	renderCanvas();
+}
+
+function tileBottomDecrease() {
+	let row = plane.tiles.find(item => item.isActive === true).row;
+	plane.tiles.forEach(item => {
+		if (item.row === row) {
+			item.height -= 10;
+		}
+		if (item.row === row + 1) {
+			item.y -= 10;
+			item.height += 10;
+		}
+	})
+	renderCanvas();
+}
+
+function tileLeftIncrease() {
+	let column = plane.tiles.find(item => item.isActive === true).column;
+	plane.tiles.forEach(item => {
+		if (item.column === column) {
+			item.x -= 10;
+			item.width += 10;
+		}
+		if (item.column === column - 1) {
+			item.width -= 10;
+		}
+	})
+	renderCanvas();
+}
+
+function tileLeftDecrease() {
+	let column = plane.tiles.find(item => item.isActive === true).column;
+	plane.tiles.forEach(item => {
+		if (item.column === column) {
+			item.x += 10;
+			item.width -= 10;
+		}
+		if (item.column === column - 1) {
+			item.width += 10;
+		}
+	})
+	renderCanvas();
+}
+
+function tileRightIncrease() {
 	let column = plane.tiles.find(item => item.isActive === true).column;
 	plane.tiles.forEach(item => {
 		if (item.column === column) {
@@ -319,24 +563,67 @@ function sizeLeft() {
 	renderCanvas();
 }
 
+function tileRightDecrease() {
+	let column = plane.tiles.find(item => item.isActive === true).column;
+	plane.tiles.forEach(item => {
+		if (item.column === column) {
+			item.width -= 10;
+		}
+		if (item.column === column + 1) {
+			item.x -= 10;
+			item.width += 10;
+		}
+	})
+	renderCanvas();
+}
+
+function openPanel(btn) {
+	if (btn.classList.contains('active')) {
+		btn.classList.remove('active');
+		document.getElementById(btn.dataset.id).classList.remove('active');
+	} else {
+		document.querySelectorAll('.control__item.active, .sidebar__btn.active').forEach(element => element.classList.remove('active'));
+		btn.classList.add('active');
+		document.getElementById(btn.dataset.id).classList.add('active');
+	}
+}
+
+function openDropDown(btn) {
+	if (btn.closest('.navigation__item').classList.contains('active')) {
+		btn.closest('.navigation__item').classList.remove('active');
+		btn.querySelector('.dropdown__menu').classList.remove('active');
+	} else {
+		document.querySelectorAll('.dropdown__menu.active, .navigation__item.active').forEach(element => element.classList.remove('active'));
+		btn.closest('.navigation__item').classList.add('active');
+		btn.querySelector('.dropdown__menu').classList.add('active');
+	}
+}
+
 document.addEventListener('DOMContentLoaded', function (event) {
 	document.getElementById('addPlane').addEventListener('click', function (event) {
 		addPlane();
+	});
+	document.querySelector('.planes').addEventListener('click', function (event) {
+		if (event.target.classList.contains('planes__item')) {
+			changeActivePlane(event.target.dataset.id);
+		};
+		if (event.target.classList.contains('fa-xmark')) {
+			closePlaneTab(event.target.closest('.planes__item').dataset.id);
+		};
 	});
 	document.getElementById('addExcision').addEventListener('click', function (event) {
 		addExcision();
 	});
 	document.getElementById('excisions').addEventListener('click', function (event) {
-		deleteExcision(event.target.dataset.id);
+		if (event.target.classList.contains('fa-xmark')) {
+			deleteExcision(event.target.dataset.id);
+		}
 	});
 	document.getElementById('addStandartTiles').addEventListener('click', function (event) {
-		config.dX = 0;
-		config.dY = 0;
+		setStandartTile();
 		addTiles();
 	});
 	document.getElementById('addTiles').addEventListener('click', function (event) {
-		config.dX = 0;
-		config.dY = 0;
 		setTile();
 		addTiles();
 	});
@@ -361,9 +648,6 @@ document.addEventListener('DOMContentLoaded', function (event) {
 	document.getElementById('trimDown').addEventListener('click', function (event) {
 		trimDown();
 	});
-	document.querySelector('.control__step').addEventListener('click', function (event) {
-		if (event.target.classList.contains('step')) changeStep(event.target.value);
-	});
 	document.querySelector('.move').addEventListener('click', function (event) {
 		moveTiles(event.target);
 	});
@@ -373,11 +657,60 @@ document.addEventListener('DOMContentLoaded', function (event) {
 	document.getElementById('centerY').addEventListener('click', function (event) {
 		centerY();
 	});
-	document.getElementById('sizeLeft').addEventListener('click', function (event) {
-		sizeLeft();
+	document.getElementById('tileTopIncrease').addEventListener('click', function (event) {
+		tileTopIncrease();
+	});
+	document.getElementById('tileTopDecrease').addEventListener('click', function (event) {
+		tileTopDecrease();
+	});
+	document.getElementById('tileBottomIncrease').addEventListener('click', function (event) {
+		tileBottomIncrease();
+	});
+	document.getElementById('tileBottomDecrease').addEventListener('click', function (event) {
+		tileBottomDecrease();
+	});
+	document.getElementById('tileLeftIncrease').addEventListener('click', function (event) {
+		tileLeftIncrease();
+	});
+	document.getElementById('tileLeftDecrease').addEventListener('click', function (event) {
+		tileLeftDecrease();
+	});
+	document.getElementById('tileRightIncrease').addEventListener('click', function (event) {
+		tileRightIncrease();
+	});
+	document.getElementById('tileRightDecrease').addEventListener('click', function (event) {
+		tileRightDecrease();
 	});
 	document.querySelector('.canvas').addEventListener('click', function (event) {
-		getTile(event, this);
+		getTile(event);
 	});
+	document.querySelector('.sidebar').addEventListener('click', function (event) {
+		openPanel(event.target);
+	});
+	document.querySelectorAll('.dropdown').forEach(item => {
+		item.addEventListener('click', function (event) {
+			openDropDown(this);
+		});
+	});
+	// document.querySelector('.navigation').addEventListener('click', function (event) {
+	// 	console.log(event.target);
+	// 	if (!event.target.classList.contains('navigation')) {
 
+	// 	}
+	// })
+	// document.querySelector('.workspace').addEventListener('click', function (event) {
+	// 	console.log(this);
+	// 	if (!this.classList.contains('navigation')) {
+	// 		console.log(this);
+	// 	}
+	// });
+	document.querySelector('.control__step').addEventListener('change', function (event) {
+		changeStep(event.target);
+	});
+	for (let e of document.querySelectorAll('input[type="range"].slider-progress')) {
+		e.style.setProperty('--value', e.value);
+		e.style.setProperty('--min', e.min == '' ? '0' : e.min);
+		e.style.setProperty('--max', e.max == '' ? '100' : e.max);
+		e.addEventListener('input', () => e.style.setProperty('--value', e.value));
+	}
 });

@@ -15,84 +15,129 @@
 </head>
 
 <body>
-	<div id="app" class="app">
-		<div class="control">
-			<div class="plane control_item">
-				<div class="control_inputs">
-					<input id="planeWidth" class="" type="number">
-					<label for="planeWidth" class="">Ширина, мм</label>
-					<input id="planeHeight" class="" type="number">
-					<label for="planeHeight" class="">Висота, мм</label>
+	<div class="wrapper">
+		<nav class="navigation">
+			<div class="title">Grid<span>FC</span></div>
+			<div class="navigation__item dropdown">
+				<div class="dropdown__toggle">Площина</div>
+				<div class="dropdown__menu">
+					<button id="" class="navigation__btn dropdown__item">Скопіювати площину</button>
+					<button id="" class="navigation__btn dropdown__item">Закрити всі</button>
 				</div>
-				<button id="addPlane"><i class="fa-solid fa-plus"></i>Додати площину</button>
 			</div>
-			<div class="excisions control_item">
-				<div class="control_inputs">
-					<input id="excisionWidth" class="" type="number">
-					<label for="excisionWidth" class="">Ширина, мм</label>
-					<input id="excisionHeight" class="" type="number">
-					<label for="excisionHeight" class="">Висота, мм</label>
-					<input id="excisionDX" class="" type="number">
-					<label for="excisionDX" class="">dX</label>
-					<input id="excisionDY" class="" type="number">
-					<label for="excisionDY" class="">dY</label>
+			<button data-id="excision" class="navigation__item navigation__btn">Виріз</button>
+			<div class="navigation__item dropdown">
+				<div class="dropdown__toggle">Розкладка</div>
+				<div class="dropdown__menu">
+					<button id="addStandartTiles" class="navigation__btn dropdown__item">Стандартні</button>
+					<!-- <div class="dropdown__divider"></div> -->
+					<button id="removeTiles" class="navigation__btn dropdown__item">Очистити</button>
 				</div>
-				<button id="addExcision"><i class="fa-solid fa-plus"></i>Додати виріз</button>
-				<div id="excisions" class="excisions__btns"></div>
 			</div>
-			<div class="tiles control_item">
-				<div class="control_inputs">
-					<input id="tileWidth" class="" type="number">
-					<label for="tileWidth" class="">Ширина, мм</label>
-					<input id="tileHeight" class="" type="number">
-					<label for="tileHeight" class="">Висота, мм</label>
-					<input id="tileJoint" class="" type="number" value="15">
-					<label for="tileJoint" class="">Стик, мм</label>
+			<div class="navigation__item dropdown">
+				<div class="dropdown__toggle">Редагування</div>
+				<div class="dropdown__menu">
+					<button id="centerX" class="navigation__btn dropdown__item">Центрувати по осі X</button>
+					<button id="centerY" class="navigation__btn dropdown__item">Центрувати по осі Y</button>
+					<div class="dropdown__divider"></div>
+					<button id="trim" class="navigation__btn dropdown__item">Трімінг по контуру</button>
+					<button id="trimUp" class="navigation__btn dropdown__item">Трімінг зверху</button>
+					<button id="trimDown" class="navigation__btn dropdown__item">Трімінг знизуу</button>
+					<button id="trimLeft" class="navigation__btn dropdown__item">Трімінг зліва</button>
+					<button id="trimRight" class="navigation__btn dropdown__item">Трімінг зправа</button>
 				</div>
-				<button id="addTiles"><i class="fa-solid fa-vector-square"></i>Користувацькі</button>
-				<button id="addStandartTiles"><i class="fa-solid fa-square"></i>Стандартні</button>
-				<div class="control_inputs">
-					<input id="columns" class="" type="number" value="5">
-					<label for="columns" class="">Кількість по X</label>
-					<input id="rows" class="" type="number" value="5">
-					<label for="rows" class="">Кількість по Y</label>
-				</div>
-				<!-- <button id="addTiles"><i class="fa-solid fa-table-cells"></i>Сітка</button> -->
 			</div>
-			<div class="control_item">
-				<div class="control__step">
-					<input type="radio" id="step1" class="step" name="step" value="5">
-					<label for="step1">5</label>
-					<input type="radio" id="step2" class="step" name="step" value="10" checked>
-					<label for="step2">10</label>
-					<input type="radio" id="step3" class="step" name="step" value="50">
-					<label for="step3">50</label>
-					<input type="radio" id="step4" class="step" name="step" value="100">
-					<label for="step4">100</label>
-				</div>
-				<div class="move">
-					<button id="moveLeft"><i class="fa-solid fa-angle-left"></i></button>
-					<div class="leftright">
-						<button id="moveUp"><i class="fa-solid fa-angle-up"></i></button>
-						<button id="moveDown"><i class="fa-solid fa-angle-down"></i></button>
+			<div class="planes"></div>
+		</nav>
+		<main class="workspace">
+			<aside class="sidebar">
+				<i data-id="plane" class="fa-regular fa-square-full sidebar__btn active"></i>
+				<i data-id="excision" class="fa-solid fa-scissors sidebar__btn"></i>
+				<i data-id="tiles" class="fa-solid fa-table-cells-large sidebar__btn"></i>
+				<i data-id="edit" class="fa-solid fa-up-right-and-down-left-from-center sidebar__btn"></i>
+			</aside>
+			<div class="control">
+				<div id="plane" class="plane control__item active">
+					<div class="control__inputs">
+						<input id="planeWidth" class="" type="number">
+						<label for="planeWidth" class="">Ширина, мм</label>
+						<input id="planeHeight" class="" type="number">
+						<label for="planeHeight" class="">Висота, мм</label>
 					</div>
-					<button id="moveRight"><i class="fa-solid fa-angle-right"></i></button>
+					<button id="addPlane"><i class="fa-solid fa-plus"></i>Додати площину</button>
 				</div>
-				<div class="center">
-					<button id="centerX"><i class="fa-solid fa-left-right"></i>Центрувати X</button>
-					<button id="centerY"><i class="fa-solid fa-up-down"></i>Центрувати Y</button>
+				<div id="excision" class="excisions control__item">
+					<div class="control__inputs">
+						<input id="excisionWidth" class="" type="number">
+						<label for="excisionWidth" class="">Ширина, мм</label>
+						<input id="excisionHeight" class="" type="number">
+						<label for="excisionHeight" class="">Висота, мм</label>
+						<input id="excisionDX" class="" type="number">
+						<label for="excisionDX" class="">dX</label>
+						<input id="excisionDY" class="" type="number">
+						<label for="excisionDY" class="">dY</label>
+					</div>
+					<button id="addExcision"><i class="fa-solid fa-plus"></i>Додати виріз</button>
+					<div id="excisions" class="excisions__tabs"></div>
 				</div>
-				<div class="trim">
-					<button id="trim"><i class="fa-solid fa-crop-simple"></i></button>
-					<button id="trimLeft"><i class="fa-solid fa-angles-right"></i></button>
-					<button id="trimUp"><i class="fa-solid fa-angles-down"></i></button>
-					<button id="trimRight"><i class="fa-solid fa-angles-left"></i></button>
-					<button id="trimDown"><i class="fa-solid fa-angles-up"></i></button>
+				<div id="tiles" class="tiles control__item">
+					<div class="control__inputs">
+						<input id="tileWidth" class="" type="number">
+						<label for="tileWidth" class="">Ширина, мм</label>
+						<input id="tileHeight" class="" type="number">
+						<label for="tileHeight" class="">Висота, мм</label>
+						<input id="tileJoint" class="" type="number" value="15">
+						<label for="tileJoint" class="">Стик, мм</label>
+					</div>
+					<button id="addTiles"><i class="fa-solid fa-vector-square"></i>Розкласти</button>
+					<div class="control__inputs">
+						<input id="columns" class="" type="number" value="5">
+						<label for="columns" class="">Кількість по X</label>
+						<input id="rows" class="" type="number" value="5">
+						<label for="rows" class="">Кількість по Y</label>
+					</div>
 				</div>
-				<button id="sizeLeft">Розмір вліво</button>
+				<div id="edit" class="control__item">
+					<label id="stepLabel">Крок 10мм</label>
+					<div class="dropdown__divider"></div>
+					<input type="range" id="step" class="control__step styled-slider slider-progress" min="0" max="3"
+						value="1">
+					<label>Рухати касети</label>
+					<div class="dropdown__divider"></div>
+					<div class="move">
+						<div></div>
+						<button id="moveUp"><i class="fa-solid fa-caret-up"></i></button>
+						<div></div>
+						<button id="moveLeft"><i class="fa-solid fa-caret-left"></i></button>
+						<div></div>
+						<button id="moveRight"><i class="fa-solid fa-caret-right"></i></button>
+						<div></div>
+						<button id="moveDown"><i class="fa-solid fa-caret-down"></i></button>
+						<div></div>
+					</div>
+					<label>Рухати ряди і колонки</label>
+					<div class="dropdown__divider"></div>
+					<div class="tile">
+						<button id="tileTopIncrease" class="top-inc"><i class="fa-solid fa-arrows-up-to-line"></i></button>
+						<button id="tileTopDecrease" class="top-dec"><i
+								class="fa-solid fa-arrows-up-to-line rotate-180"></i></button>
+						<button id="tileLeftIncrease" class="left-inc"><i
+								class="fa-solid fa-arrows-up-to-line rotate-left"></i></button>
+						<button id="tileRightIncrease" class="right-inc"><i
+								class="fa-solid fa-arrows-up-to-line rotate-right"></i></button>
+						<button id="tileLeftDecrease" class="left-dec"><i
+								class="fa-solid fa-arrows-up-to-line rotate-right"></i></button>
+						<button id="tileRightDecrease" class="right-dec"><i
+								class="fa-solid fa-arrows-up-to-line rotate-left"></i></button>
+						<button id="tileBottomIncrease" class="bot-inc"><i
+								class="fa-solid fa-arrows-up-to-line rotate-180"></i></button>
+						<button id="tileBottomDecrease" class="bot-dec"><i class="fa-solid fa-arrows-up-to-line"></i></button>
+						<div class="border"></div>
+					</div>
+				</div>
 			</div>
-		</div>
-		<div class="canvas"></div>
+			<div class="canvas"></div>
+		</main>
 	</div>
 </body>
 
