@@ -1,8 +1,14 @@
 "use strict";
 
 const config = {
-	activePlane: 0,
+	tabs: [],
+	// planes: [],
+	activeTab: -1,
+	// activeTabHasExscisions: false,
+	// activeTabHasTiles: false,
+	// activeTabIsColored: false,
 	step: 10,
+	selectionType: 'row',
 	tile: {
 		width: 585,
 		height: 585,
@@ -10,159 +16,237 @@ const config = {
 	},
 }
 
-let ctx;
-let planes = [];
-const canvasPaddingX = 700;
-const canvasPaddingY = 700;
+let defaultSettings = {
+	tileColor: '#f5f5f5',
+	jointColor: '#bebebe',
+}
 
-function addCanvas(plane) {
-	removeCanvas();
-	const canvas = document.createElement('canvas');
-	const canvasElement = document.querySelector('.canvas');
-	canvas.id = 'canvas';
-	ctx = canvas.getContext('2d');
-	canvas.width = plane.width + canvasPaddingX * 2;
-	canvas.height = plane.height + canvasPaddingY * 2;
-	// canvas.width = parseInt(window.getComputedStyle(document.querySelector('.canvas')).width);
-	// canvas.height = parseInt(window.getComputedStyle(document.querySelector('.canvas')).height);
-	//	console.log(document.documentElement.clientWidth);
-	const width = document.createElement('div');
-	width.classList.add('canvas__size', 'canvas__size_width');
-	width.innerHTML = plane.width;
-	const height = document.createElement('div');
-	height.classList.add('canvas__size', 'canvas__size_height');
-	height.innerHTML = plane.height;
-	canvasElement.appendChild(canvas);
-	width.style.top = (parseInt(window.getComputedStyle(document.querySelector('.canvas')).height) - parseInt(window.getComputedStyle(document.getElementById('canvas')).height)) / 2 + 20 + 'px';
-	height.style.left = (parseInt(window.getComputedStyle(document.querySelector('.canvas')).width) - parseInt(window.getComputedStyle(document.getElementById('canvas')).width)) / 2 + 20 + 'px';
-	canvasElement.appendChild(width);
-	canvasElement.appendChild(height);
-	renderCanvas();
+let settings = {
+	tileColor: '#f5f5f5',
+	jointColor: '#bebebe',
+}
+
+function updateAppState(key, value) {
+	return
+	if (key && value) {
+		config[key] = value;
+	}
+	config.activeTabHasExscisions = false;
+	config.activeTabHasTiles = false;
+	if (config.planes[config.activeTab]) {
+		if (config.planes[config.activeTab].excisions.length > 0) {
+			config.activeTabHasTiles = true;
+		}
+		if (config.planes[config.activeTab].tiles.length > 0) {
+			config.activeTabHasTiles = true;
+		}
+	}
+	checkButtons();
+}
+
+function checkButtons() {
+	return
+	const buttons = document.querySelectorAll('.disabled');
+	const plane = config.tabs[config.activeTab].data;
+	buttons.forEach(item => {
+		item.disabled = true;
+		if (!plane) return
+		if (config.planes.length > 0 && item.classList.contains('disabled-plane')) {
+			item.disabled = false;
+		}
+		if (plane.excisions.length > 0 && item.classList.contains('disabled-excisions')) {
+			item.disabled = false;
+		}
+		if (plane.tiles.length > 0 && item.classList.contains('disabled-tiles')) {
+			item.disabled = false;
+		}
+	});
+}
+
+function showAlert(message) {
+	document.querySelector('.alert').classList.add('active');
+	document.querySelector('.alert__message').innerHTML = message;
+}
+
+function closeAlert() {
+	document.querySelector('.alert').classList.remove('active');
 }
 
 function removeCanvas() {
 	document.querySelector('.canvas').innerHTML = '';
+	// document.querySelector('.canvas').remove();
 }
 
-function renderTabs() {
-	const planesElement = document.querySelector('.planes');
-	planesElement.innerHTML = '';
-	if (planes.length === 0) return
-	planes.forEach(item => {
-		let div = document.createElement('div');
-		div.dataset.id = planes.indexOf(item);
-		div.classList.add('planes__item')
-		if (planes.indexOf(item) === config.activePlane) {
-			div.classList.add('active')
-		}
-		div.innerHTML = `Площина ${planes.indexOf(item) + 1} <i class="fa-solid fa-xmark"></i>`;
-		planesElement.appendChild(div);
-	})
-}
-
-function closePlaneTab(id) {
-	id = Number(id);
-	planes.splice(id, 1);
-	renderTabs();
-	if (planes.length === 0) {
-		removeCanvas();
-		return
+function createTab(name, type, data) {
+	const newTab = {
+		name: name,
+		type: type,
+		data: data,
 	}
-	if (config.activePlane === id) { //якщо активна вкладка
-		if (id === planes.length) { //якщо остання
-			changeActivePlane(id - 1);
-		} else { //якщо не остання
-			changeActivePlane(id);
-		}
+	config.tabs.push(newTab);
+	changeActiveTab(config.tabs.length - 1);
+}
+
+function removeTab(id) {
+	const tabs = config.tabs;
+	if (typeof id === 'object') {
+		id = config.activeTab;
 	} else {
-		if (id < config.activePlane) {
-			changeActivePlane(config.activePlane - 1);
+		id = Number(id);
+		tabs.splice(id, 1);
+		if (config.activeTab === id) { //якщо активна вкладка
+			if (id === tabs.length) { //якщо остання
+				changeActiveTab(id - 1);
+			} else { //якщо не остання
+				changeActiveTab(id);
+			}
+		} else {
+			if (id < config.activeTab) {
+				changeActiveTab(config.activeTab - 1);
+			} else {
+				changeActiveTab(config.activeTab);
+			}
 		}
 	}
-
 }
 
-function changeActivePlane(id) {
+function changeActiveTab(id) {
 	id = Number(id);
-	config.activePlane = id;
-	changeActivePlaneTab();
-}
-
-function changeActivePlaneTab() {
-	let planesTabs = document.querySelectorAll('.planes__item');
-	planesTabs.forEach(item => item.classList.remove('active'));
-	planesTabs[config.activePlane].classList.add('active');
-	//addCanvas(planes[config.activePlane]);
-	renderCanvas();
+	config.activeTab = id;
+	renderTabs();
+	const tabs = document.querySelectorAll('.tabs__item');
+	// переробити!!! додати у форич
+	tabs.forEach(item => item.classList.remove('active'));
+	if (id >= 0) {
+		tabs[id].classList.add('active');
+	}
+	renderTab();
 }
 
 function addPlane() {
-	let planeWidth = Number(document.getElementById('planeWidth').value);
-	let planeHeight = Number(document.getElementById('planeHeight').value);
-	let plane = {
+	const planeWidth = Number(document.getElementById('planeWidth').value);
+	const planeHeight = Number(document.getElementById('planeHeight').value);
+	if (planeWidth <= 0 || planeHeight <= 0) {
+		showAlert("Ширина або висота площини не може дорівнювати нулю чи бути від'ємною");
+		return
+	}
+	const plane = {
 		dX: 0,
 		dY: 0,
-		width: 5000,
-		height: 2000,
+		width: planeWidth,
+		height: planeHeight,
 		excisions: [],
 		tiles: [],
+		jointColor: settings.jointColor,
 	}
-	planes.push(plane);
-	renderTabs();
-	changeActivePlane(planes.length - 1);
+	const report = config.tabs.find(item => item.type === 'report');
+	if (report) {
+		removeTab(config.tabs.indexOf(report));
+	}
+	createTab(`Площина ${config.tabs.filter(item => item.type === 'plane').length + 1}`, 'plane', plane);
 }
 
+function clonePlane() {
+	const oldPlane = config.tabs[config.activeTab].data;
+	config.tabs.push(oldPlane)
+	createTab(`Площина ${config.tabs.filter(item => item.type === 'plane').length + 1}`, 'plane', oldPlane);
+}
+
+function removeAllTabs() {
+	// закриває все. Якщо налаштування в окремій вкладці будуть, то теж їх закриє
+	config.tabs = [];
+	changeActiveTab(-1);
+}
+
+
 function addExcision() {
-	let excisionWidth = Number(document.getElementById('excisionWidth').value);
-	let excisionHeight = Number(document.getElementById('excisionHeight').value);
-	let excisionDX = Number(document.getElementById('excisionDX').value);
-	let excisionDY = Number(document.getElementById('excisionDY').value);
-	// let excision = {
-	// 	width: 200,
-	// 	height: 200,
-	// 	dX: 700,
-	// 	dY: 930,
-	// }
-	let excision = {
-		width: 500,
-		height: 500,
+	const planes = config.tabs.filter(item => item.type === 'plane');
+	if (planes.length === 0) {
+		showAlert("Площина не задана");
+		return
+	}
+	const plane = config.tabs[config.activeTab].data;
+	const excisionWidth = Number(document.getElementById('excisionWidth').value);
+	const excisionHeight = Number(document.getElementById('excisionHeight').value);
+	const excisionDX = Number(document.getElementById('excisionDX').value);
+	const excisionDY = Number(document.getElementById('excisionDY').value);
+	const excision = {
+		width: excisionWidth,
+		height: excisionHeight,
 		dX: excisionDX,
 		dY: excisionDY,
 	}
-	excision.x = canvasPaddingX + excision.dX;
-	excision.y = canvasPaddingY + planes[config.activePlane].height - excision.height - excision.dY;
-	planes[config.activePlane].excisions.push(excision);
+	excision.x = excision.dX;
+	excision.y = plane.height - excision.height - excision.dY;
+	if (excisionWidth <= 0 || excisionHeight <= 0) {
+		showAlert("Ширина або висота вирізу не може дорівнювати нулю чи бути від'ємною");
+		return
+	}
+	if (excisionDX < 0 || excisionDY < 0 || excisionDX + excisionWidth > plane.width || excisionDY + excisionHeight > plane.height) {
+		showAlert("Виріз виходить за площину");
+		return
+	}
+	if (plane.excisions.length > 0) {
+		let intersections = 0;
+		plane.excisions.forEach(item => {
+			if (Math.abs(item.x - excision.x) < excision.width / 2 + item.width / 2 && Math.abs(item.y - excision.y) < excision.height / 2 + item.height / 2) {
+				intersections++;
+			}
+		})
+		if (intersections > 0) {
+			showAlert("Вирізи пересікаються");
+			return
+		}
+
+	}
+	plane.excisions.push(excision);
 	renderCanvas();
 }
 
-function deleteExcision(id) {
-	planes[config.activePlane].excisions.splice(id, 1);
+function removeExcision(id) {
+	config.tabs[config.activeTab].data.excisions.splice(id, 1);
+	renderCanvas();
+}
+
+function removeAllEcisions() {
+	config.tabs[config.activeTab].data.excisions = [];
 	renderCanvas();
 }
 
 function addTiles() {
-	let tile = config.tile;
-	let plane = planes[config.activePlane];
+	const planes = config.tabs.filter(item => item.type === 'plane');
+	if (planes.length === 0) {
+		showAlert("Площина не задана");
+		return
+	}
+	const tile = config.tile;
+	const plane = config.tabs[config.activeTab].data;
+	const dX = plane.dX;
+	const dY = plane.dY;
+	let starPointX = 0;
+	let starPointY = 0;
 	plane.tiles = [];
-	let dX = plane.dX;
-	let dY = plane.dY;
-	let starPointX = dX;
-	let starPointY = dY;
-	// if (dX > 0) {
-	// 	starPointX = tile.width - dX;
-	// } else {
-	// 	starPointX = dX;
-	// }
-	if (dY > 0) {
-		starPointY = tile.height + dY;
+	if (dX > 0 && dX < tile.width - tile.joint) {
+		starPointX = dX - tile.width + tile.joint;
+	} else if (dX < 0 && Math.abs(dX) < tile.width - tile.joint) {
+		starPointX = dX;
 	} else {
+		plane.dX = 0;
+		starPointX = 0;
+	}
+	if (dY > 0 && dY < tile.height - tile.joint) {
+		starPointY = dY - tile.height + tile.joint;
+	} else if (dY < 0 && Math.abs(dY) < tile.height - tile.joint) {
 		starPointY = dY;
+	} else {
+		plane.dY = 0;
+		starPointY = 0;
 	}
 	let column = 0;
 	for (let i = starPointX; i < plane.width - tile.joint; i += tile.width - tile.joint) {
 		let row = 0;
 		for (let j = starPointY; j < plane.height - tile.joint; j += tile.height - tile.joint) {
-			let newTile = {
+			const newTile = {
 				width: tile.width,
 				height: tile.height,
 				joint: tile.joint,
@@ -171,6 +255,7 @@ function addTiles() {
 				column: column,
 				row: row,
 				isActive: false,
+				color: settings.tileColor,
 			};
 			row++;
 			plane.tiles.push(newTile);
@@ -180,17 +265,71 @@ function addTiles() {
 	renderCanvas();
 }
 
+function addStandartTiles() {
+	const tile = {
+		width: 585,
+		height: 585,
+		joint: 15,
+	}
+	config.tile = tile;
+	addTiles();
+}
+
+function addCustomTiles() {
+	const tile = {
+		width: Number(document.getElementById('tileWidth').value),
+		height: Number(document.getElementById('tileHeight').value),
+		joint: Number(document.getElementById('tileJoint').value),
+	}
+	config.tile = tile;
+	addTiles();
+}
+
+function removeTiles() {
+	const plane = config.tabs[config.activeTab].data;
+	plane.tiles = [];
+	renderCanvas();
+}
+
 function checkExcisions() {
-	let plane = planes[config.activePlane];
+	const plane = config.tabs[config.activeTab].data;
 	for (let i = 0; i < plane.tiles.length; i++) {
-		if (plane.excisions.length === 0) {
-			plane.tiles[i].del = false;
+		let tile = plane.tiles[i];
+		tile.del = false;
+		if (plane.width - tile.x < 120 || plane.height - tile.y < 120 || tile.x < 0 && tile.x + tile.width < 120 || tile.y < 0 && tile.y + tile.height < 120) {
+			tile.del = true;
 		}
 		plane.excisions.forEach(item => {
-			let tile = plane.tiles[i];
-			tile.del = false;
 			let excision = item;
-			if (excision.x <= tile.x + tile.joint && excision.x + excision.width >= tile.x + tile.width - tile.joint && excision.y <= tile.y + tile.joint && excision.y + excision.height >= tile.y + tile.height - tile.joint) {
+			let effectiveX;
+			let effectiveWidth;
+			let effectiveY;
+			let effectiveHeight;
+			if (tile.x < 0) {
+				effectiveX = 0;
+			} else {
+				effectiveX = tile.x;
+			}
+			if (tile.x + tile.width > plane.width) {
+				effectiveWidth = plane.width - tile.x;
+			} else {
+				effectiveWidth = tile.width;
+			}
+			if (tile.y < 0) {
+				effectiveY = 0;
+			} else {
+				effectiveY = tile.y;
+			}
+			if (tile.y + tile.height > plane.height) {
+				effectiveHeight = plane.height - tile.y;
+			} else {
+				effectiveHeight = tile.height;
+			}
+			let tileInExcisionStartX = excision.x <= effectiveX + tile.joint;
+			let tileInExcisionEndX = excision.x + excision.width >= tile.x + effectiveWidth - tile.joint;
+			let tileInExcisionStartY = excision.y <= effectiveY + tile.joint;
+			let tileInExcisionEndY = excision.y + excision.height >= tile.y + effectiveHeight - tile.joint;
+			if (tileInExcisionStartX && tileInExcisionEndX && tileInExcisionStartY && tileInExcisionEndY) {
 				tile.del = true;
 			}
 		});
@@ -198,44 +337,45 @@ function checkExcisions() {
 }
 
 function setTileGrid() {
+	const planes = config.tabs.filter(item => item.type === 'plane');
+	if (planes.length === 0) {
+		showAlert("Площина не задана");
+		return
+	}
+	const plane = config.tabs[config.activeTab].data;
 	const columns = Number(document.getElementById('columns').value);
 	const rows = Number(document.getElementById('rows').value);
 	const tileWidth = Math.floor((plane.width - config.tile.joint) / columns) + config.tile.joint;
 	const tileHeight = Math.floor((plane.height - config.tile.joint) / rows) + config.tile.joint;
 	config.tile.width = tileWidth - tileWidth % 5;
 	config.tile.height = tileHeight - tileHeight % 5;
-	config.dX = 0;
-	config.dY = 0;
-	addTiles();
-	checkGrid(columns, rows);
+	plane.dX = 0;
+	plane.dY = 0;
+	addTiles(columns, rows);
 	renderCanvas();
 }
 
-function checkGrid(columns, rows) {
-	for (let i = 0; i < plane.tiles.length; i++) {
-		let tile = plane.tiles[i];
-		tile.del = false;
-		if (tile.column === columns || tile.row === rows) {
-			tile.del = true;
-		}
-	}
-}
-
 function moveTiles(btn) {
+	const planes = config.tabs.filter(item => item.type === 'plane');
+	if (planes.length === 0) {
+		showAlert("Площина не задана");
+		return
+	}
 	let id = btn.id;
 	if (!btn.id) {
 		id = btn.parentElement.id;
 	}
+	const plane = config.tabs[config.activeTab].data;
 	const step = config.step
 	switch (id) {
 		case 'moveUp':
-			planes[config.activePlane].dY += step; break;
+			plane.dY -= step; break;
 		case 'moveLeft':
-			planes[config.activePlane].dX -= step; break;
+			plane.dX -= step; break;
 		case 'moveRight':
-			planes[config.activePlane].dX += step; break;
+			plane.dX += step; break;
 		case 'moveDown':
-			planes[config.activePlane].dY -= step; break;
+			plane.dY += step; break;
 	}
 	addTiles();
 }
@@ -245,6 +385,7 @@ function trim() {
 	trimRight();
 	trimUp();
 	trimDown();
+	const plane = config.tabs[config.activeTab].data;
 	plane.tiles.forEach((item) => {
 		if (item.width < 120 || item.height < 120) {
 			item.del = true;
@@ -254,56 +395,66 @@ function trim() {
 }
 
 function trimLeft() {
-	plane.tiles.forEach((element) => {
-		if (element.column === 0) {
-			element.width -= canvasPaddingX - element.x;
-			element.x = canvasPaddingX;
+	const plane = config.tabs[config.activeTab].data;
+	plane.tiles.forEach((item) => {
+		if (item.column === 0) {
+			item.width -= Math.abs(item.x);
+			item.x = 0;
 		}
 	})
 	renderCanvas();
 }
 
 function trimRight() {
+	const plane = config.tabs[config.activeTab].data;
 	let firstColumnWidth = plane.tiles.find(item => item.column === 0).width;
-	plane.tiles.forEach((element) => {
-		if (element.column === Math.max(...plane.tiles.map(item => item.column))) {
-			element.width = canvasPaddingX + plane.width - element.x;
-			if (element.width > firstColumnWidth) element.width -= 5;
+	plane.tiles.forEach((item) => {
+		if (item.column === Math.max(...plane.tiles.map(item => item.column))) {
+			item.width = plane.width - item.x;
+			if (item.width > firstColumnWidth) {
+				// item.width = firstColumnWidth;
+			}
 		}
 	})
 	renderCanvas();
 }
 
 function trimUp() {
-	plane.tiles.forEach((element) => {
-		if (element.row === 0) {
-			element.height -= canvasPaddingY - element.y;
-			element.y = canvasPaddingY;
+	const plane = config.tabs[config.activeTab].data;
+	plane.tiles.forEach((item) => {
+		if (item.row === 0) {
+			item.height -= Math.abs(item.y);
+			item.y = 0;
 		}
 	})
 	renderCanvas();
 }
 
 function trimDown() {
+	const plane = config.tabs[config.activeTab].data;
 	let firstRowHeight = plane.tiles.find(item => item.row === 0).height;
-	plane.tiles.forEach((element) => {
-		if (element.row === Math.max(...plane.tiles.map(item => item.row))) {
-			element.height = canvasPaddingY + plane.height - element.y;
-			if (element.height > firstRowHeight) element.height -= 5;
+	plane.tiles.forEach((item) => {
+		if (item.row === Math.max(...plane.tiles.map(item => item.row))) {
+			item.height = plane.height - item.y;
+			if (item.height !== firstRowHeight) {
+				// item.height = firstRowHeight;
+			}
 		}
 	})
 	renderCanvas();
 }
 
 function centerX() {
-	let tilesWidth = plane.tiles.filter((element) => element.row === 0).map((element) => element.width).reduce((previousValue, currentValue) => previousValue + currentValue - config.tile.joint);
-	config.dX = Math.floor(((canvasPaddingX * 2) + plane.width - tilesWidth) / 20) * 10 - canvasPaddingX;
+	const plane = config.tabs[config.activeTab].data;
+	let tilesWidth = plane.tiles.filter((item) => item.row === 0).map((item) => item.width).reduce((previousValue, currentValue) => previousValue + currentValue - config.tile.joint);
+	plane.dX = Math.floor((plane.width - tilesWidth) / 20) * 10;
 	addTiles();
 }
 
 function centerY() {
-	let tilesHeight = plane.tiles.filter((element) => element.column === 0).map((element) => element.height).reduce((previousValue, currentValue) => previousValue + currentValue - config.tile.joint);
-	config.dY = Math.floor(((canvasPaddingY * 2) + plane.height - tilesHeight) / 20) * 10 - canvasPaddingY + 5;
+	const plane = config.tabs[config.activeTab].data;
+	let tilesHeight = plane.tiles.filter((item) => item.column === 0).map((item) => item.height).reduce((previousValue, currentValue) => previousValue + currentValue - config.tile.joint);
+	plane.dY = Math.floor((plane.height - tilesHeight) / 20) * 10 + 5;
 	addTiles();
 }
 
@@ -327,268 +478,465 @@ function changeStep(input) {
 	document.getElementById('stepLabel').innerHTML = `Крок ${newStep}мм`;
 }
 
-function renderCanvas() {
-	let canvas = document.querySelector('.canvas');
-	canvas.innerHTML = '';
-	let plane = planes[config.activePlane];
-	let ratio = (parseInt(window.getComputedStyle(canvas).width) - 100) / plane.width;
-	let planeElement = document.createElement('div');
-	planeElement.classList.add('canvas__plane');
-	planeElement.style.width = parseInt(window.getComputedStyle(canvas).width) - 100 + 'px';
-	planeElement.style.height = (parseInt(window.getComputedStyle(canvas).width) - 100) * plane.height / plane.width + 'px';
-	let tilesElement = document.createElement('div');
-	tilesElement.classList.add('canvas__tiles');
-	planeElement.appendChild(tilesElement);
-	plane.tiles.forEach(item => {
-		renderTile(item, ratio, tilesElement);
-	});
-	canvas.appendChild(planeElement);
+function calcPlaneArea(plane) {
+	let planeArea = plane.width / 1000 * plane.height / 1000;
+	let excisionsArea = 0;
+	if (plane.excisions.length > 0) {
+		excisionsArea = plane.excisions.map((item) => item.width / 1000 * item.height / 1000).reduce((acc, cur) => acc + cur);
+	}
+	let planeEffectiveArea = planeArea - excisionsArea;
+	return planeEffectiveArea;
 }
 
-function renderTile(tile, ratio, tilesElement) {
+function makePlaneMap(plane) {
+	let planeMap = plane.tiles.map((tile) => tile.width + '<i class="bi-x"></i>' + tile.height).reduce((acc, cur) => {
+		acc[cur] = (acc[cur] || 0) + 1;
+		return acc;
+	}, {})
+	return planeMap;
+}
+
+function calcTileArea(plane) {
+	let tileArea = plane.tiles.filter(item => !item.del).map(item => item.width / 1000 * item.height / 1000).reduce((acc, cur) => acc + cur);
+	return tileArea;
+}
+
+function calcFullReportData() {
+	let planesData = [];
+	let allTiles = [];
+	const planes = config.tabs.filter(item => item.type === 'plane').map(item => item.data);
+	planes.forEach(item => {
+		let planeData = {
+			width: item.width,
+			height: item.height,
+			area: calcPlaneArea(item),
+			tileArea: calcTileArea(item),
+		}
+		planesData.push(planeData);
+		allTiles.push(...item.tiles)
+	})
+	let fullArea = planesData.map(item => item.area).reduce((acc, cur) => acc + cur);
+	let fullTileArea = planesData.map(item => item.tileArea).reduce((acc, cur) => acc + cur);
+	let fullTileMap = allTiles.map((tile) => tile.width + '<i class="bi-x"></i>' + tile.height).reduce((acc, cur) => {
+		acc[cur] = (acc[cur] || 0) + 1;
+		return acc;
+	}, {})
+	let fullReportData = {
+		order: 1,
+		planesData: planesData,
+		fullArea: fullArea,
+		fullTileArea: fullTileArea,
+		fullTileMap: fullTileMap,
+	};
+	return fullReportData;
+}
+
+function addFullReport() {
+	const report = config.tabs.find(item => item.type === 'report');
+	if (report) {
+		changeActiveTab(config.tabs.indexOf(report));
+		return
+	}
+	const reportData = calcFullReportData();
+	createTab('Специфікація', 'report', reportData)
+}
+
+function setActiveTile(tile) {
+	let active = document.querySelector('.sidebar').querySelector('.active');
+	if (!active || active.dataset.id === 'paint') {
+		config.tabs[config.activeTab].data.tiles[Number(tile.closest('.canvas__tile').dataset.id)].color = document.getElementById('tileColor').value;
+		renderCanvas();
+		return
+	}
+	if (!active || active.dataset.id !== 'edit') return
+	let id = Number(tile.closest('.canvas__tile').dataset.id);
+	let tiles = config.tabs[config.activeTab].data.tiles;
+	tiles.forEach(item => item.isActive = false);
+	let type = config.selectionType;
+	if (type === 'row') {
+		let row = tiles[id].row;
+		tiles.forEach(item => {
+			if (item.row === row && !item.del) {
+				item.isActive = true;
+			}
+		});
+	} else {
+		let column = tiles[id].column;
+		tiles.forEach(item => {
+			if (item.column === column && !item.del) {
+				item.isActive = true;
+			}
+		});
+	}
+	renderCanvas();
+}
+
+function changeJointColor(color) {
+	config.tabs[config.activeTab].data.jointColor = color.value;
+	renderCanvas();
+}
+
+function changeSelectionType(input) {
+	config.selectionType = input.value;
+	// if (config.planes.length > 0) {
+	// 	config.planes[config.activeTab].tiles.forEach(item => item.isActive = false);
+	// 	renderCanvas();
+	// }
+}
+
+function changeTileSize(id) {
+	const plane = config.tabs[config.activeTab].data;
+	const step = config.step
+	let row = plane.tiles.find(item => item.isActive === true).row;
+	let column = plane.tiles.find(item => item.isActive === true).column;
+	plane.tiles.forEach(item => {
+		switch (id) {
+			case 'tileTopIncrease':
+				if (item.row === row) {
+					item.y -= step;
+					item.height += step;
+				}
+				if (item.row === row - 1) {
+					item.height -= step;
+				} break;
+			case 'tileTopDecrease':
+				if (item.row === row) {
+					item.y += step;
+					item.height -= step;
+				}
+				if (item.row === row - 1) {
+					item.height += step;
+				} break;
+			case 'tileBottomIncrease':
+				if (item.row === row) {
+					item.height += step;
+				}
+				if (item.row === row + 1) {
+					item.y += step;
+					item.height -= step;
+				} break;
+			case 'tileBottomDecrease':
+				if (item.row === row) {
+					item.height -= step;
+				}
+				if (item.row === row + 1) {
+					item.y -= step;
+					item.height += step;
+				} break;
+			case 'tileLeftIncrease':
+				if (item.column === column) {
+					item.x -= step;
+					item.width += step;
+				}
+				if (item.column === column - 1) {
+					item.width -= step;
+				} break;
+			case 'tileLeftDecrease':
+				if (item.column === column) {
+					item.x += step;
+					item.width -= step;
+				}
+				if (item.column === column - 1) {
+					item.width += step;
+				} break;
+			case 'tileRightIncrease':
+				if (item.column === column) {
+					item.width += step;
+				}
+				if (item.column === column + 1) {
+					item.x += step;
+					item.width -= step;
+				} break;
+			case 'tileRightDecrease':
+				if (item.column === column) {
+					item.width -= step;
+				}
+				if (item.column === column + 1) {
+					item.x -= step;
+					item.width += step;
+				} break;
+		}
+	});
+	renderCanvas();
+}
+
+function resetPlaneColors() {
+	document.getElementById('jointColor').value = settings.jointColor;
+	document.getElementById('tileColor').value = settings.tileColor;
+	config.tabs[config.activeTab].data.jointColor = settings.jointColor;
+	config.tabs[config.activeTab].data.tiles.forEach(item => item.color = settings.tileColor);
+	renderCanvas();
+}
+
+function renderTab() {
+	document.querySelector('.workarea').innerHTML = '';
+	document.getElementById('excisions').innerHTML = '';
+	document.getElementById('report').innerHTML = '<div class="control__caption">Специфікація площини</div><div class="control__label control__label_center">Площина не задана</div>';
+	if (config.tabs.length === 0) return
+	switch (config.tabs[config.activeTab].type) {
+		case 'plane':
+			renderCanvas();
+			break;
+		case 'report':
+			document.getElementById('excisions').innerHTML = '';
+			document.getElementById('report').innerHTML = '<div class="control__caption">Специфікація площини</div><div class="control__label control__label_center">Площина не вибрана</div>';
+			renderFullReport();
+			break;
+	}
+}
+
+function renderTabs() {
+	const tabs = config.tabs;
+	const tabsElement = document.querySelector('.tabs');
+	tabsElement.innerHTML = '';
+	if (tabs.length === 0) return
+	tabs.forEach((item, index) => {
+		let icon;
+		switch (item.type) {
+			case 'plane':
+				icon = ' bi bi-bounding-box-circles';
+				break;
+			case 'report':
+				icon = ' bi bi-layout-text-sidebar-reverse';
+				break;
+		}
+		if (item.type)
+			tabsElement.insertAdjacentHTML('beforeend', `
+			<div data-id="${index}" class="tabs__item${icon}">${item.name}<i class="bi bi-x"></i></div>
+		`)
+	})
+}
+
+function renderExcisionTabs() {
+	const excisionsElement = document.getElementById('excisions');
+	excisionsElement.innerHTML = '';
+	const tab = config.tabs[config.activeTab];
+	// if (!tab || tab.type !== 'plane') return
+	const excisions = tab.data.excisions;
+	if (excisions.length === 0) return
+	excisions.forEach((item, index) => {
+		excisionsElement.insertAdjacentHTML('beforeend', `
+			<div class="excisions__tab">Ш: ${item.width} В: ${item.height}<br>dX: ${item.dX} dY: ${item.dY}<i data-id="${index}" class="bi bi-x"></i></div>
+		`)
+	});
+}
+
+function renderCanvas() {
+	// updateAppState();
+	document.querySelector('.workarea').innerHTML = '<div class="canvas"></div>';
+	const canvas = document.querySelector('.canvas');
+	const planes = config.tabs.filter(item => item.type === 'plane');
+	const plane = config.tabs[config.activeTab].data;
+	renderPlaneReport(plane);
+	renderExcisionTabs();
+	checkExcisions();
+	let ratio = (parseInt(window.getComputedStyle(canvas).width) - 100) / plane.width;
+	let maxHeight = parseInt(window.getComputedStyle(canvas).height) - 100;
+	let planeElement = document.createElement('div');
+	planeElement.classList.add('canvas__plane');
+	if ((parseInt(window.getComputedStyle(canvas).width) - 100) * plane.height / plane.width > maxHeight) {
+		planeElement.style.height = parseInt(window.getComputedStyle(canvas).height) - 100 + 'px';
+		planeElement.style.width = (parseInt(window.getComputedStyle(canvas).height) - 100) * plane.width / plane.height + 'px';
+		ratio = (parseInt(window.getComputedStyle(canvas).height) - 100) / plane.height;
+	} else {
+		planeElement.style.width = parseInt(window.getComputedStyle(canvas).width) - 100 + 'px';
+		planeElement.style.height = (parseInt(window.getComputedStyle(canvas).width) - 100) * plane.height / plane.width + 'px';
+	}
+	let tilesElement = document.createElement('div');
+	tilesElement.classList.add('canvas__tiles');
+	let excisionsElement = document.createElement('div');
+	excisionsElement.classList.add('canvas__excisions');
+	planeElement.appendChild(tilesElement);
+	plane.tiles.forEach(item => {
+		renderTile(item, ratio, tilesElement, plane);
+	});
+	planeElement.appendChild(excisionsElement);
+	plane.excisions.forEach(item => {
+		renderExcision(item, ratio, excisionsElement);
+	});
+	canvas.appendChild(planeElement);
+	if (plane.tiles.filter(item => item.isActive).length > 0) {
+		renderMoveButtons();
+	}
+}
+
+function renderTile(tile, ratio, tilesElement, plane) {
 	if (tile.del === true) return
 	let tileElement = document.createElement('div');
+	tileElement.dataset.id = plane.tiles.indexOf(tile);
+	tileElement.dataset.row = tile.row;
+	tileElement.dataset.column = tile.column;
 	tileElement.classList.add('canvas__tile');
 	tileElement.style.top = tile.y * ratio + 'px';
 	tileElement.style.left = tile.x * ratio + 'px';
 	tileElement.style.width = tile.width * ratio + 'px';
 	tileElement.style.height = tile.height * ratio + 'px';
+
 	let mirrorElement = document.createElement('div');
 	mirrorElement.classList.add('canvas__mirror');
+	if (tile.isActive) {
+		tileElement.classList.add('active');
+	} else {
+		tileElement.style.backgroundColor = plane.jointColor;
+	}
 	mirrorElement.style.top = tile.joint * ratio + 'px';
 	mirrorElement.style.left = tile.joint * ratio + 'px';
 	mirrorElement.style.width = (tile.width - tile.joint * 2) * ratio + 'px';
 	mirrorElement.style.height = (tile.height - tile.joint * 2) * ratio + 'px';
-	mirrorElement.innerHTML = `${tile.width}<i class="fa-solid fa-xmark"></i>${tile.height}`;
+	mirrorElement.style.backgroundColor = tile.color;
+	mirrorElement.innerHTML = `${tile.width}<i class="bi-x"></i>${tile.height}`;
 	tileElement.appendChild(mirrorElement);
 	tilesElement.appendChild(tileElement);
 }
 
-function renderCanvas1() {
-	renderExcisionTabs();
-	checkExcisions();
-	let plane = planes[config.activePlane];
-	// let ratioX = (document.documentElement.clientWidth - 240) / (plane.width + canvasPaddingX * 2);
-	// let ratioY = document.documentElement.clientHeight / (plane.height + canvasPaddingY * 2);
-	// ctx.save();
-	// ctx.scale(ratioX, ratioX);
-	ctx.fillStyle = "#FFFFFF";
-	ctx.fillRect(0, 0, plane.width + canvasPaddingX * 2, plane.height + canvasPaddingY * 2);
-	if (plane.width > plane.height) {
-		ctx.lineWidth = (plane.width + canvasPaddingX * 2) / 800;
+function renderExcision(excision, ratio, excisionsElement) {
+	let excisionElement = document.createElement('div');
+	excisionElement.classList.add('canvas__excision');
+	excisionElement.style.top = excision.y * ratio + 'px';
+	excisionElement.style.left = excision.x * ratio + 'px';
+	excisionElement.style.width = excision.width * ratio + 'px';
+	excisionElement.style.height = excision.height * ratio + 'px';
+	excisionsElement.appendChild(excisionElement);
+}
+
+function renderPlaneReport(plane) {
+	let reportElement = document.getElementById('report');
+	reportElement.innerHTML = '';
+	// if (!plane) {
+	// 	reportElement.insertAdjacentHTML('beforeend', `
+	// 		<div class="control__caption">Специфікація площини</div>
+	// 		<div class="control__label control__label_center">Площина не задана</div>
+	// 	`);
+	// 	return
+	// }
+	let planeArea = calcPlaneArea(plane);
+	reportElement.insertAdjacentHTML('beforeend', `
+		<div class="control__caption">Специфікація площини</div>
+		<div class="control__label">Ширина: ${plane.width}мм</div>
+		<div class="control__label">Висота: ${plane.height}мм</div>
+		<div class="control__label">Площа: ${planeArea.toFixed(3)} м²</div>
+	`);
+	if (plane.tiles.length === 0) return
+	reportElement.insertAdjacentHTML('beforeend', `
+		<div class="dropdown__divider"></div>
+		<div class="control__caption">Фасадні касети:</div>
+		<div class="control__label control__label_small">Ширина<i class="bi bi-x"></i>Висота</div>
+	`);
+	let planeMap = makePlaneMap(plane);
+	for (let key in planeMap) {
+		reportElement.insertAdjacentHTML('beforeend', `
+			<div class="control__label">${key} - ${planeMap[key]} шт.</div>
+		`);
+	}
+	let tileArea = calcTileArea(plane);
+	reportElement.insertAdjacentHTML('beforeend', `
+		<div class="dropdown__divider"></div>
+		<div class="control__caption">Площа:</div>
+		<div class="control__label control__label_small">Фасадних касет</div>
+		<div class="control__label">${tileArea.toFixed(3)} м²</div>
+	`);
+}
+
+function renderFullReport() {
+	config.tabs[config.activeTab].data = calcFullReportData();
+	let newFullReport = config.tabs[config.activeTab].data;
+	let workarea = document.querySelector('.workarea');
+	workarea.insertAdjacentHTML('beforeend', `
+		<div class= "report">
+			<div class="report__title">Специфікація</div>
+			<div class="report__gridfc">GridFC v1.0.0</div>
+			<div class="report__subtitle">Замовлення №${newFullReport.order}</div>
+			<hr class="report__line">
+			<div class="report__table">
+				<div class="report__column">
+					<div class="report__data">№</div>
+					<div class="report__data">Ширина:</div>
+					<div class="report__data">Висота:</div>
+					<div class="report__data">Площа:</div>
+				</div>
+			</div>
+			<hr class="report__line report__line_small">
+			<div class="report__caption">Всього: ${newFullReport.fullArea.toFixed(3)} м²</div>
+			<hr class="report__line">
+			<div class="report__caption">Фасадні касети:</div>
+			<div class="report__tiles"></div>
+			<hr class="report__line report__line_small">
+			<div class="report__caption">Всього касет: ${newFullReport.fullTileArea.toFixed(3)} м²</div>
+		</div>
+	`);
+	newFullReport.planesData.forEach(item => {
+		workarea.querySelector('.report__table').insertAdjacentHTML('beforeend', `
+			<div class="report__column">
+				<div class="report__data">Площина ${newFullReport.planesData.indexOf(item) + 1}</div>
+				<div class="report__data">${item.width}мм:</div>
+				<div class="report__data">${item.height}мм:</div>
+				<div class="report__data">${item.area.toFixed(3)} м²</div>
+			</div>
+		`);
+	})
+	for (let key in newFullReport.fullTileMap) {
+		workarea.querySelector('.report__tiles').insertAdjacentHTML('beforeend', `
+			<div class="report__label">${key} - ${newFullReport.fullTileMap[key]} шт.</div>
+		`);
+	}
+}
+
+function renderMoveButtons() {
+	let type = config.selectionType;
+	let minRow = Math.min(...config.tabs[config.activeTab].data.tiles.filter(item => item.isActive).map(item => item.row))
+	let minColumn = Math.min(...config.tabs[config.activeTab].data.tiles.filter(item => item.isActive).map(item => item.column));
+	let tilesElements = document.querySelectorAll('.canvas__tile');
+	let firstTileElement;
+	for (let i = 0; i < tilesElements.length; i++) {
+		if (Number(tilesElements[i].dataset.row) === minRow && Number(tilesElements[i].dataset.column) === minColumn) {
+			firstTileElement = tilesElements[i];
+		}
+
+	}
+	let left = parseInt(window.getComputedStyle(firstTileElement).left);
+	let top = parseInt(window.getComputedStyle(firstTileElement).top);
+	let height = parseInt(window.getComputedStyle(firstTileElement).height);
+	let width = parseInt(window.getComputedStyle(firstTileElement).width);
+	let margin = -25;
+	if (height < 50 || width < 50) {
+		margin = -46;
+	}
+	if (type === 'row') {
+		document.querySelector('.canvas__plane').insertAdjacentHTML('beforeend', `
+			<button id="tileTopIncrease" class="canvas__button bi bi-caret-up-fill" style="top: ${top - 20}px; left:  ${margin}px;"></button>
+			<button id="tileTopDecrease" class="canvas__button bi bi-caret-down-fill" style="top: ${top + 3}px; left: ${margin}px;"></button>
+			<button id="tileBottomDecrease" class="canvas__button bi bi-caret-up-fill" style="top: ${top + height - 20}px; left: -25px;"></button>
+			<button id="tileBottomIncrease" class="canvas__button bi bi-caret-down-fill" style="top: ${top + height + 3}px; left: -25px;"></button>
+		`)
 	} else {
-		ctx.lineWidth = (plane.height + canvasPaddingY * 2) / 800;
+		document.querySelector('.canvas__plane').insertAdjacentHTML('beforeend', `
+			<button id="tileLeftIncrease" class="canvas__button bi bi-caret-left-fill" style="top: ${margin}px; left:${left - 20}px;"></button>
+			<button id="tileLeftDecrease" class="canvas__button bi bi-caret-right-fill" style="top: ${margin}px; left: ${left + 3}px;"></button>
+			<button id="tileRightDecrease" class="canvas__button bi bi-caret-left-fill" style="top: -25px; left: ${left + width - 20}px;"></button>
+			<button id="tileRightIncrease" class="canvas__button bi bi-caret-right-fill" style="top: -25px; left: ${left + width + 3}px;"></button>
+		`)
 	}
-	plane.tiles.forEach(element => {
-		renderTile(element);
-	});
-	plane.excisions.forEach(element => {
-		renderExcision(element);
-	});
-	ctx.strokeStyle = "#AA0000";
-	ctx.strokeRect(canvasPaddingX, canvasPaddingY, plane.width, plane.height);
-	ctx.fillStyle = "#000000";
-	ctx.font = "small-caps 120px Arial";
-	// ctx.fillText(`${plane.width}`, canvasPaddingX + plane.width / 2, canvasPaddingY / 2);
-	// ctx.fillText(`${plane.height}`, canvasPaddingX / 2, canvasPaddingY + plane.height / 2);
-	// ctx.restore();
-}
-
-function renderExcisionTabs() {
-	const excisions = document.getElementById('excisions');
-	let plane = planes[config.activePlane];
-	excisions.innerHTML = '';
-	if (plane.excisions.length === 0) return
-	for (let i = 0; i < plane.excisions.length; i++) {
-		let div = document.createElement('div');
-		div.classList.add('excisions__tab')
-		div.innerHTML = `Виріз ${i + 1}: ${plane.excisions[i].width} ${plane.excisions[i].height} ${plane.excisions[i].dX} ${plane.excisions[i].dY} <i data-id="${i}" class="fa-solid fa-xmark"></i>`;
-		excisions.appendChild(div);
-	}
-}
-
-function renderExcision(excision) {
-	ctx.strokeStyle = "#fcba03";
-	ctx.strokeRect(excision.x, excision.y, excision.width, excision.height);
-}
-
-function renderTile1(tile) {
-	if (tile.del === true) return
-	ctx.fillStyle = "#AAAAAA";
-	ctx.fillRect(tile.x, tile.y, tile.width, tile.height);
-	if (tile.isActive) {
-		ctx.fillStyle = "#DFDFDF";
-	} else {
-		ctx.fillStyle = "#FAFAFA";
-	}
-	ctx.fillRect(tile.x + tile.joint, tile.y + tile.joint, tile.width - tile.joint * 2, tile.height - tile.joint * 2);
-	if (tile.isActive) {
-		ctx.fillStyle = "#000000";
-		ctx.font = "small-caps 60px Arial";
-		ctx.fillText(`${tile.width}x${tile.height}`, tile.x + 100, tile.y + tile.height / 2);
-	}
-
-
-}
-
-function renderActiveTile(tile) {
-	// if (!tile.isActive) return
-	// ctx.strokeStyle = "#79a884";
-	// ctx.strokeRect(tile.x + tile.joint, tile.y + tile.joint, tile.width - tile.joint * 2, tile.height - tile.joint * 2);
-}
-
-function setTile() {
-	const tileWidth = Number(document.getElementById('tileWidth').value);
-	const tileHeight = Number(document.getElementById('tileHeight').value);
-	const tileJoint = Number(document.getElementById('tileJoint').value);
-	config.tile.width = tileWidth;
-	config.tile.height = tileHeight;
-	config.tile.joint = tileJoint;
-}
-
-function setStandartTile() {
-	config.tile.width = 585;
-	config.tile.height = 585;
-	config.tile.joint = 15;
-}
-
-function getTile(event) {
-	let x = event.offsetX / parseInt(window.getComputedStyle(document.getElementById('canvas')).width) * (planes[config.activePlane].width + canvasPaddingX * 2);
-	let y = event.offsetY / parseInt(window.getComputedStyle(document.getElementById('canvas')).height) * (planes[config.activePlane].height + canvasPaddingY * 2);
-	planes[config.activePlane].tiles.forEach(item => {
-		let isActive = item.isActive;
-		item.isActive = false;
-		if (item.x < x && item.x + item.width > x && item.y < y && item.y + item.height > y) {
-			item.isActive = !isActive;
-		}
-	})
-	renderCanvas();
-}
-
-function tileTopIncrease() {
-	let row = plane.tiles.find(item => item.isActive === true).row;
-	plane.tiles.forEach(item => {
-		if (item.row === row) {
-			item.y -= 10;
-			item.height += 10;
-		}
-		if (item.row === row - 1) {
-			item.height -= 10;
-		}
-	})
-	renderCanvas();
-}
-
-function tileTopDecrease() {
-	let row = plane.tiles.find(item => item.isActive === true).row;
-	plane.tiles.forEach(item => {
-		if (item.row === row) {
-			item.y += 10;
-			item.height -= 10;
-		}
-		if (item.row === row - 1) {
-			item.height += 10;
-		}
-	})
-	renderCanvas();
-}
-
-function tileBottomIncrease() {
-	let row = plane.tiles.find(item => item.isActive === true).row;
-	plane.tiles.forEach(item => {
-		if (item.row === row) {
-			item.height += 10;
-		}
-		if (item.row === row + 1) {
-			item.y += 10;
-			item.height -= 10;
-		}
-	})
-	renderCanvas();
-}
-
-function tileBottomDecrease() {
-	let row = plane.tiles.find(item => item.isActive === true).row;
-	plane.tiles.forEach(item => {
-		if (item.row === row) {
-			item.height -= 10;
-		}
-		if (item.row === row + 1) {
-			item.y -= 10;
-			item.height += 10;
-		}
-	})
-	renderCanvas();
-}
-
-function tileLeftIncrease() {
-	let column = plane.tiles.find(item => item.isActive === true).column;
-	plane.tiles.forEach(item => {
-		if (item.column === column) {
-			item.x -= 10;
-			item.width += 10;
-		}
-		if (item.column === column - 1) {
-			item.width -= 10;
-		}
-	})
-	renderCanvas();
-}
-
-function tileLeftDecrease() {
-	let column = plane.tiles.find(item => item.isActive === true).column;
-	plane.tiles.forEach(item => {
-		if (item.column === column) {
-			item.x += 10;
-			item.width -= 10;
-		}
-		if (item.column === column - 1) {
-			item.width += 10;
-		}
-	})
-	renderCanvas();
-}
-
-function tileRightIncrease() {
-	let column = plane.tiles.find(item => item.isActive === true).column;
-	plane.tiles.forEach(item => {
-		if (item.column === column) {
-			item.width += 10;
-		}
-		if (item.column === column + 1) {
-			item.x += 10;
-			item.width -= 10;
-		}
-	})
-	renderCanvas();
-}
-
-function tileRightDecrease() {
-	let column = plane.tiles.find(item => item.isActive === true).column;
-	plane.tiles.forEach(item => {
-		if (item.column === column) {
-			item.width -= 10;
-		}
-		if (item.column === column + 1) {
-			item.x -= 10;
-			item.width += 10;
-		}
-	})
-	renderCanvas();
 }
 
 function openPanel(btn) {
 	if (btn.classList.contains('active')) {
 		btn.classList.remove('active');
 		document.getElementById(btn.dataset.id).classList.remove('active');
+		document.querySelector('.control').classList.remove('active');
 	} else {
 		document.querySelectorAll('.control__item.active, .sidebar__btn.active').forEach(element => element.classList.remove('active'));
 		btn.classList.add('active');
 		document.getElementById(btn.dataset.id).classList.add('active');
+		document.querySelector('.control').classList.add('active');
 	}
+	// renderCanvas();
 }
 
 function openDropDown(btn) {
+	if (!btn) {
+		document.querySelectorAll('.dropdown__menu.active, .navigation__item.active').forEach(element => element.classList.remove('active'));
+		return
+	}
 	if (btn.closest('.navigation__item').classList.contains('active')) {
 		btn.closest('.navigation__item').classList.remove('active');
 		btn.querySelector('.dropdown__menu').classList.remove('active');
@@ -600,90 +948,60 @@ function openDropDown(btn) {
 }
 
 document.addEventListener('DOMContentLoaded', function (event) {
+	checkButtons();
+	// меню - Площина
+	document.getElementById('removeAllExcisions').addEventListener('click', removeAllEcisions);
+	document.getElementById('clonePlane').addEventListener('click', clonePlane);
+	document.getElementById('removePlane').addEventListener('click', removeTab);
+	document.getElementById('removeAllPlanes').addEventListener('click', removeAllPlanes);
+	// меню - Розкладка
+	document.getElementById('addStandartTiles').addEventListener('click', addStandartTiles);
+	document.getElementById('removeTiles').addEventListener('click', removeTiles);
+	document.getElementById('fullReport').addEventListener('click', addFullReport);
+	// меню - Редагування
+	document.getElementById('centerX').addEventListener('click', centerX);
+	document.getElementById('centerY').addEventListener('click', centerY);
+	document.getElementById('trim').addEventListener('click', trim);
+	document.getElementById('trimLeft').addEventListener('click', trimLeft);
+	document.getElementById('trimRight').addEventListener('click', trimRight);
+	document.getElementById('trimUp').addEventListener('click', trimUp);
+	document.getElementById('trimDown').addEventListener('click', trimDown);
+	// меню - Довідка
+	// панель - Площина
 	document.getElementById('addPlane').addEventListener('click', function (event) {
 		addPlane();
 	});
-	document.querySelector('.planes').addEventListener('click', function (event) {
-		if (event.target.classList.contains('planes__item')) {
-			changeActivePlane(event.target.dataset.id);
+	document.querySelector('.tabs').addEventListener('click', function (event) {
+		if (event.target.classList.contains('tabs__item')) {
+			changeActiveTab(event.target.dataset.id);
 		};
-		if (event.target.classList.contains('fa-xmark')) {
-			closePlaneTab(event.target.closest('.planes__item').dataset.id);
+		if (event.target.classList.contains('bi-x')) {
+			removeTab(event.target.closest('.tabs__item').dataset.id);
 		};
 	});
 	document.getElementById('addExcision').addEventListener('click', function (event) {
 		addExcision();
 	});
 	document.getElementById('excisions').addEventListener('click', function (event) {
-		if (event.target.classList.contains('fa-xmark')) {
-			deleteExcision(event.target.dataset.id);
+		if (event.target.classList.contains('bi-x')) {
+			removeExcision(event.target.dataset.id);
 		}
 	});
-	document.getElementById('addStandartTiles').addEventListener('click', function (event) {
-		setStandartTile();
-		addTiles();
-	});
-	document.getElementById('addTiles').addEventListener('click', function (event) {
-		setTile();
-		addTiles();
-	});
-	document.getElementById('columns').addEventListener('input', function (event) {
+	document.getElementById('addTiles').addEventListener('click', addCustomTiles);
+	document.getElementById('columns').addEventListener('change', function (event) {
 		setTileGrid();
 	});
-	document.getElementById('rows').addEventListener('input', function (event) {
+	document.getElementById('rows').addEventListener('change', function (event) {
 		setTileGrid();
-	});
-	document.getElementById('trim').addEventListener('click', function (event) {
-		trim();
-	});
-	document.getElementById('trimLeft').addEventListener('click', function (event) {
-		trimLeft();
-	});
-	document.getElementById('trimRight').addEventListener('click', function (event) {
-		trimRight();
-	});
-	document.getElementById('trimUp').addEventListener('click', function (event) {
-		trimUp();
-	});
-	document.getElementById('trimDown').addEventListener('click', function (event) {
-		trimDown();
 	});
 	document.querySelector('.move').addEventListener('click', function (event) {
 		moveTiles(event.target);
 	});
-	document.getElementById('centerX').addEventListener('click', function (event) {
-		centerX();
-	});
-	document.getElementById('centerY').addEventListener('click', function (event) {
-		centerY();
-	});
-	document.getElementById('tileTopIncrease').addEventListener('click', function (event) {
-		tileTopIncrease();
-	});
-	document.getElementById('tileTopDecrease').addEventListener('click', function (event) {
-		tileTopDecrease();
-	});
-	document.getElementById('tileBottomIncrease').addEventListener('click', function (event) {
-		tileBottomIncrease();
-	});
-	document.getElementById('tileBottomDecrease').addEventListener('click', function (event) {
-		tileBottomDecrease();
-	});
-	document.getElementById('tileLeftIncrease').addEventListener('click', function (event) {
-		tileLeftIncrease();
-	});
-	document.getElementById('tileLeftDecrease').addEventListener('click', function (event) {
-		tileLeftDecrease();
-	});
-	document.getElementById('tileRightIncrease').addEventListener('click', function (event) {
-		tileRightIncrease();
-	});
-	document.getElementById('tileRightDecrease').addEventListener('click', function (event) {
-		tileRightDecrease();
-	});
-	document.querySelector('.canvas').addEventListener('click', function (event) {
-		getTile(event);
-	});
+	document.getElementsByName('selection-type').forEach(item => {
+		item.addEventListener('change', function () {
+			changeSelectionType(this);
+		});
+	})
 	document.querySelector('.sidebar').addEventListener('click', function (event) {
 		openPanel(event.target);
 	});
@@ -692,18 +1010,26 @@ document.addEventListener('DOMContentLoaded', function (event) {
 			openDropDown(this);
 		});
 	});
-	// document.querySelector('.navigation').addEventListener('click', function (event) {
-	// 	console.log(event.target);
-	// 	if (!event.target.classList.contains('navigation')) {
-
-	// 	}
-	// })
-	// document.querySelector('.workspace').addEventListener('click', function (event) {
-	// 	console.log(this);
-	// 	if (!this.classList.contains('navigation')) {
-	// 		console.log(this);
-	// 	}
-	// });
+	document.querySelector('.workspace').addEventListener('click', function (event) {
+		openDropDown();
+	});
+	document.querySelector('.workarea').addEventListener('click', function (event) {
+		if (event.target.classList.contains('canvas__mirror')) {
+			setActiveTile(event.target);
+		}
+		if (event.target.classList.contains('canvas__button')) {
+			changeTileSize(event.target.id);
+		}
+	});
+	document.getElementById('defaultColors').addEventListener('click', function (event) {
+		resetPlaneColors();
+	});
+	document.getElementById('jointColor').addEventListener('change', function (event) {
+		changeJointColor(this);
+	});
+	document.querySelector('.alert__close').addEventListener('click', function (event) {
+		closeAlert();
+	});
 	document.querySelector('.control__step').addEventListener('change', function (event) {
 		changeStep(event.target);
 	});
