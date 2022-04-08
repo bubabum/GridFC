@@ -4,7 +4,7 @@
 <head>
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400&family=Raleway&display=swap" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&family=Raleway&display=swap" rel="stylesheet">
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,11 +21,12 @@
 			<div class="navigation__item dropdown">
 				<div class="dropdown__toggle">Файл</div>
 				<div class="dropdown__menu">
-					<button id="" class="navigation__btn dropdown__item">Навий проєкт</button>
+					<button id="" class="navigation__btn dropdown__item">Новий проєкт</button>
 					<button id="" class="navigation__btn dropdown__item">Зберегти</button>
 					<div class="dropdown__divider"></div>
-					<button id="" class="navigation__btn dropdown__item">Закрити</button>
 					<button id="" class="navigation__btn dropdown__item">Видалити</button>
+					<button id="" class="navigation__btn dropdown__item">Закрити</button>
+					<button id="removeAllTabs" class="navigation__btn dropdown__item">Закрити всі вкладки</button>
 					<div class="dropdown__divider"></div>
 					<button id="" class="navigation__btn dropdown__item">Експорт у PDF</button>
 				</div>
@@ -33,12 +34,10 @@
 			<div class="navigation__item dropdown">
 				<div class="dropdown__toggle">Площина</div>
 				<div class="dropdown__menu">
-					<button id="removeAllExcisions" class="navigation__btn dropdown__item disabled disabled-excisions">Видалити всі вирізи</button>
+					<button id="removeAllExcisions" class="navigation__btn dropdown__item disabled disabled-type disabled-excisions">Видалити всі вирізи</button>
 					<div class="dropdown__divider"></div>
-					<button id="clonePlane" class="navigation__btn dropdown__item disabled disabled-plane">Скопіювати площину</button>
-					<div class="dropdown__divider"></div>
-					<button id="removePlane" class="navigation__btn dropdown__item disabled disabled-plane">Видалити площину</button>
-					<button id="removeAllPlanes" class="navigation__btn dropdown__item disabled disabled-plane">Видалити всі плоищни</button>
+					<button id="clonePlane" class="navigation__btn dropdown__item disabled disabled-type disabled-plane">Скопіювати площину</button>
+					<button id="removePlane" class="navigation__btn dropdown__item disabled disabled-type disabled-plane">Видалити площину</button>
 					<!-- <div class="dropdown__divider"></div>
 					<button id="" class="navigation__btn dropdown__item" disabled>Друкувати площину</button> -->
 				</div>
@@ -46,23 +45,23 @@
 			<div class="navigation__item dropdown">
 				<div class="dropdown__toggle">Розкладка</div>
 				<div class="dropdown__menu">
-					<button id="addStandartTiles" class="navigation__btn dropdown__item disabled disabled-plane">Стандартні</button>
-					<button id="removeTiles" class="navigation__btn dropdown__item disabled disabled-tiles">Очистити</button>
+					<button id="addStandartTiles" class="navigation__btn dropdown__item disabled disabled-type disabled-plane">Стандартні</button>
+					<button id="removeTiles" class="navigation__btn dropdown__item disabled disabled-type disabled-tiles">Очистити</button>
 					<div class="dropdown__divider"></div>
-					<button id="fullReport" class="navigation__btn dropdown__item disabled disabled-tiles">Специфікація</button>
+					<button id="fullReport" class="navigation__btn dropdown__item disabled disabled-type disabled-tiles">Специфікація</button>
 				</div>
 			</div>
 			<div class="navigation__item dropdown">
 				<div class="dropdown__toggle">Редагування</div>
 				<div class="dropdown__menu">
-					<button id="centerX" class="navigation__btn dropdown__item disabled disabled-tiles">Центрувати по осі X</button>
+					<button id="centerX" class="navigation__btn dropdown__item disabled disabled-type disabled-tiles">Центрувати по осі X</button>
 					<button id="centerY" class="navigation__btn dropdown__item disabled disabled-tiles">Центрувати по осі Y</button>
 					<div class="dropdown__divider"></div>
-					<button id="trim" class="navigation__btn dropdown__item disabled disabled-tiles">Трімінг по контуру</button>
-					<button id="trimUp" class="navigation__btn dropdown__item disabled disabled-tiles">Трімінг зверху</button>
-					<button id="trimDown" class="navigation__btn dropdown__item disabled disabled-tiles">Трімінг знизуу</button>
-					<button id="trimLeft" class="navigation__btn dropdown__item disabled disabled-tiles">Трімінг зліва</button>
-					<button id="trimRight" class="navigation__btn dropdown__item disabled disabled-tiles">Трімінг зправа</button>
+					<button id="trim" class="navigation__btn dropdown__item disabled disabled-type disabled-tiles">Трімінг по контуру</button>
+					<button id="trimUp" class="navigation__btn dropdown__item disabled disabled-type disabled-tiles">Трімінг зверху</button>
+					<button id="trimDown" class="navigation__btn dropdown__item disabled disabled-type disabled-tiles">Трімінг знизуу</button>
+					<button id="trimLeft" class="navigation__btn dropdown__item disabled disabled-type disabled-tiles">Трімінг зліва</button>
+					<button id="trimRight" class="navigation__btn dropdown__item disabled disabled-type disabled-tiles">Трімінг зправа</button>
 				</div>
 			</div>
 			<div class="navigation__item dropdown">
@@ -76,7 +75,7 @@
 		</nav>
 		<main class="workspace">
 			<aside class="sidebar">
-				<div class="sidebar__group">
+				<div class="sidebar__group sidebar__group_panels">
 					<i data-id="files" class="bi bi-files sidebar__btn"></i>
 					<i data-id="plane" class="bi bi-bounding-box-circles sidebar__btn"></i>
 					<i data-id="excision" class="bi bi-scissors sidebar__btn"></i>
@@ -195,26 +194,50 @@
 				</div>
 			</div>
 			<div class="workarea">
-				<div class="settings">
-					<label for="">Розміри стандартної касети, мм</label>
-					<input id="" type="textarea" value="120">
-					<input id="" type="textarea" value="120">
-					<input id="" type="textarea" value="120">
-					<label for="">Мінімальний розмір касети, мм</label>
-					<input id="" type="textarea" value="120">
-					<label for="">Розмір шрифту касети</label>
-					<input id="" type="number" value="14">
-					<label for="">Колір лінії площини</label>
-					<input id="" type="color" value="#f5f5f5">
-					<label for="">Колір лінії вирізу</label>
-					<input id="" type="color" value="#f5f5f5">
-					<label for="">Колір стиків касет</label>
-					<input id="" type="color" value="#f5f5f5">
-					<label for="">Колір дзеркала касет</label>
-					<input id="" type="color" value="#f5f5f5">
-					<label for="">Колір активних касет</label>
-					<input id="" type="color" value="#f5f5f5">
-				</div>
+				<!-- <div class="settings">
+					<div class="settings__item">
+						<div class="settings__title">Розміри стандартної касети</div>
+						<div class="settings__details">Визначає розмір касети, по якій буде формуватись розкладка через меню Розкладка->Стандартні</div>
+						<div class="settings__block">
+							<input id="" type="text" value="585">
+							<label for="">Ширина, мм</label>
+							<input id="" type="text" value="585">
+							<label for="">Висота, мм</label>
+							<input id="" type="text" value="15">
+							<label for="">Стик, мм</label>
+						</div>
+					</div>
+					<div class="settings__item">
+						<div class="settings__title">Мінімальний розмір касети</div>
+						<div class="settings__details">Визначає розмір в мм, менше якого касети в розкладці не будуть формуватись</div>
+						<input id="" type="text" value="120">
+					</div>
+					<div class="settings__item">
+						<div class="settings__title">Розмір шрифту касети</div>
+						<div class="settings__details">Визначає розмір шрифту дял написів розмірів на касеті</div>
+						<input id="" type="number" value="14">
+					</div>
+					<div class="settings__item">
+						<div class="settings__title">Колір лінії площини</div>
+						<input id="" type="color" value="#f5f5f5">
+					</div>
+					<div class="settings__item">
+						<div class="settings__title">Колір лінії вирізу</div>
+						<input id="" type="color" value="#f5f5f5">
+					</div>
+					<div class="settings__item">
+						<div class="settings__title">Колір стиків касет</div>
+						<input id="" type="color" value="#f5f5f5">
+					</div>
+					<div class="settings__item">
+						<div class="settings__title">Колір дзеркала касет</div>
+						<input id="" type="color" value="#f5f5f5">
+					</div>
+					<div class="settings__item">
+						<div class="settings__title">Колір активних касет</div>
+						<input id="" type="color" value="#f5f5f5">
+					</div>
+				</div> -->
 			</div>
 			<div class="alert">
 				<div class="alert__body">

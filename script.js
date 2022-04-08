@@ -2,7 +2,6 @@
 
 const config = {
 	tabs: [],
-	// planes: [],
 	activeTab: -1,
 	// activeTabHasExscisions: false,
 	// activeTabHasTiles: false,
@@ -14,50 +13,41 @@ const config = {
 		height: 585,
 		joint: 15,
 	},
-}
-
-let defaultSettings = {
-	tileColor: '#f5f5f5',
-	jointColor: '#bebebe',
-}
-
-let settings = {
-	tileColor: '#f5f5f5',
-	jointColor: '#bebebe',
-}
-
-function updateAppState(key, value) {
-	return
-	if (key && value) {
-		config[key] = value;
+	settings: {
+		standartTile: {
+			width: 585,
+			height: 585,
+			joint: 15,
+		},
+		minTileSize: 120,
+		tileFontSize: 10,
+		planeColor: '#ff0000',
+		excisionColor: '#ffaf00',
+		jointColor: '#bebebe',
+		mirrorColor: '#f5f5f5',
+		activeTileColor: '#ffa768',
 	}
-	config.activeTabHasExscisions = false;
-	config.activeTabHasTiles = false;
-	if (config.planes[config.activeTab]) {
-		if (config.planes[config.activeTab].excisions.length > 0) {
-			config.activeTabHasTiles = true;
-		}
-		if (config.planes[config.activeTab].tiles.length > 0) {
-			config.activeTabHasTiles = true;
-		}
-	}
-	checkButtons();
 }
 
 function checkButtons() {
-	return
 	const buttons = document.querySelectorAll('.disabled');
+	const tab = config.tabs[config.activeTab];
+	if (!tab || tab.type !== 'plane') {
+		buttons.forEach(item => item.disabled = true);
+		return
+	}
 	const plane = config.tabs[config.activeTab].data;
+	const planes = config.tabs.filter(item => item.type === 'plane');
 	buttons.forEach(item => {
 		item.disabled = true;
 		if (!plane) return
-		if (config.planes.length > 0 && item.classList.contains('disabled-plane')) {
+		if (planes.length > 0 && item.classList.contains('disabled-plane')) {
 			item.disabled = false;
 		}
 		if (plane.excisions.length > 0 && item.classList.contains('disabled-excisions')) {
 			item.disabled = false;
 		}
-		if (plane.tiles.length > 0 && item.classList.contains('disabled-tiles')) {
+		if (!config.tabs.filter(item => item.type === 'plane').find(item => item.data.tiles.length === 0)) {
 			item.disabled = false;
 		}
 	});
@@ -70,11 +60,6 @@ function showAlert(message) {
 
 function closeAlert() {
 	document.querySelector('.alert').classList.remove('active');
-}
-
-function removeCanvas() {
-	document.querySelector('.canvas').innerHTML = '';
-	// document.querySelector('.canvas').remove();
 }
 
 function createTab(name, type, data) {
@@ -137,7 +122,7 @@ function addPlane() {
 		height: planeHeight,
 		excisions: [],
 		tiles: [],
-		jointColor: settings.jointColor,
+		// jointColor: settings.jointColor,
 	}
 	const report = config.tabs.find(item => item.type === 'report');
 	if (report) {
@@ -148,7 +133,6 @@ function addPlane() {
 
 function clonePlane() {
 	const oldPlane = config.tabs[config.activeTab].data;
-	config.tabs.push(oldPlane)
 	createTab(`Площина ${config.tabs.filter(item => item.type === 'plane').length + 1}`, 'plane', oldPlane);
 }
 
@@ -255,7 +239,7 @@ function addTiles() {
 				column: column,
 				row: row,
 				isActive: false,
-				color: settings.tileColor,
+				// color: config.settings.tileColor,
 			};
 			row++;
 			plane.tiles.push(newTile);
@@ -293,10 +277,11 @@ function removeTiles() {
 
 function checkExcisions() {
 	const plane = config.tabs[config.activeTab].data;
+	const minTileSize = config.settings.minTileSize;
 	for (let i = 0; i < plane.tiles.length; i++) {
 		let tile = plane.tiles[i];
 		tile.del = false;
-		if (plane.width - tile.x < 120 || plane.height - tile.y < 120 || tile.x < 0 && tile.x + tile.width < 120 || tile.y < 0 && tile.y + tile.height < 120) {
+		if (plane.width - tile.x < minTileSize || plane.height - tile.y < minTileSize || tile.x < 0 && tile.x + tile.width < minTileSize || tile.y < 0 && tile.y + tile.height < minTileSize) {
 			tile.del = true;
 		}
 		plane.excisions.forEach(item => {
@@ -385,13 +370,6 @@ function trim() {
 	trimRight();
 	trimUp();
 	trimDown();
-	const plane = config.tabs[config.activeTab].data;
-	plane.tiles.forEach((item) => {
-		if (item.width < 120 || item.height < 120) {
-			item.del = true;
-		}
-	})
-	renderCanvas();
 }
 
 function trimLeft() {
@@ -531,16 +509,6 @@ function calcFullReportData() {
 	return fullReportData;
 }
 
-function addFullReport() {
-	const report = config.tabs.find(item => item.type === 'report');
-	if (report) {
-		changeActiveTab(config.tabs.indexOf(report));
-		return
-	}
-	const reportData = calcFullReportData();
-	createTab('Специфікація', 'report', reportData)
-}
-
 function setActiveTile(tile) {
 	let active = document.querySelector('.sidebar').querySelector('.active');
 	if (!active || active.dataset.id === 'paint') {
@@ -661,11 +629,56 @@ function changeTileSize(id) {
 }
 
 function resetPlaneColors() {
+	const settings = config.settings;
 	document.getElementById('jointColor').value = settings.jointColor;
 	document.getElementById('tileColor').value = settings.tileColor;
 	config.tabs[config.activeTab].data.jointColor = settings.jointColor;
 	config.tabs[config.activeTab].data.tiles.forEach(item => item.color = settings.tileColor);
 	renderCanvas();
+}
+
+function changeSettings(input) {
+	let key = input.dataset.id;
+	let value = input.value;
+	config.settings[key] = value;
+	console.log(config.settings);
+	applySettings();
+}
+
+function applySettings() {
+	let settings = config.settings;
+	const root = document.querySelector(':root');
+	root.style.setProperty('--plane-color', settings.planeColor);
+	root.style.setProperty('--excision-color', settings.excisionColor);
+	root.style.setProperty('--joint-color', settings.jointColor);
+	root.style.setProperty('--mirror-color', settings.mirrorColor);
+	root.style.setProperty('--active-tile-color', settings.activeTileColor);
+	root.style.setProperty('--tile-font-size', settings.tileFontSize + 'px');
+
+}
+
+function saveSettings() {
+	// save to Json file
+}
+
+function openSettings() {
+	const settings = config.tabs.find(item => item.type === 'settings');
+	if (settings) {
+		changeActiveTab(config.tabs.indexOf(settings));
+		return
+	}
+	const settingsData = config.settings;
+	createTab('Налаштування', 'settings', settingsData)
+}
+
+function openFullReport() {
+	const report = config.tabs.find(item => item.type === 'report');
+	if (report) {
+		changeActiveTab(config.tabs.indexOf(report));
+		return
+	}
+	const reportData = calcFullReportData();
+	createTab('Специфікація', 'report', reportData)
 }
 
 function renderTab() {
@@ -682,7 +695,13 @@ function renderTab() {
 			document.getElementById('report').innerHTML = '<div class="control__caption">Специфікація площини</div><div class="control__label control__label_center">Площина не вибрана</div>';
 			renderFullReport();
 			break;
+		case 'settings':
+			document.getElementById('excisions').innerHTML = '';
+			document.getElementById('report').innerHTML = '<div class="control__caption">Специфікація площини</div><div class="control__label control__label_center">Площина не вибрана</div>';
+			renderSettings();
+			break;
 	}
+	checkButtons();
 }
 
 function renderTabs() {
@@ -699,13 +718,20 @@ function renderTabs() {
 			case 'report':
 				icon = ' bi bi-layout-text-sidebar-reverse';
 				break;
+			case 'settings':
+				icon = ' bi bi-gear';
+				break;
 		}
-		if (item.type)
-			tabsElement.insertAdjacentHTML('beforeend', `
+		if (item.type === 'plane') {
+			item.name = `Площина ${tabs.filter(item => item.type === 'plane').indexOf(item) + 1}`;
+		}
+		tabsElement.insertAdjacentHTML('beforeend', `
 			<div data-id="${index}" class="tabs__item${icon}">${item.name}<i class="bi bi-x"></i></div>
 		`)
 	})
+
 }
+
 
 function renderExcisionTabs() {
 	const excisionsElement = document.getElementById('excisions');
@@ -721,8 +747,64 @@ function renderExcisionTabs() {
 	});
 }
 
+function renderSettings() {
+	const settings = config.settings;
+	document.querySelector('.workarea').insertAdjacentHTML('beforeend', `
+		<div class="settings">
+			<div class="settings__item">
+				<div class="settings__title">Розміри стандартної касети</div>
+				<div class="settings__details">Визначає розмір касети, по якій буде формуватись розкладка через меню Розкладка->Стандартні</div>
+				<div class="settings__block">
+					<input data-id="standartTileWidth" class="settings__input" type="text" value="${settings.standartTile.width}">
+					<label for="">Ширина, мм</label>
+					<input data-id="standartTileHeight" class="settings__input" type="text" value="${settings.standartTile.height}">
+					<label for="">Висота, мм</label>
+					<input data-id="standartTileJoint" class="settings__input" type="text" value="${settings.standartTile.joint}">
+					<label for="">Стик, мм</label>
+				</div>
+			</div>
+			<div class="settings__item">
+				<div class="settings__title">Мінімальний розмір касети</div>
+				<div class="settings__details">Визначає розмір, менше якого касети в розкладці не будуть формуватись</div>
+				<div class="settings__block">
+					<input data-id="minTileSize" class="settings__input" type="text" value="${settings.minTileSize}">
+					<label for="">мм</label>
+				</div>
+			</div>
+			<div class="settings__item">
+				<div class="settings__title">Розмір шрифту касети</div>
+				<div class="settings__details">Визначає розмір шрифту дял написів розмірів на касеті</div>
+				<div class="settings__block">
+					<input data-id="tileFontSize" class="settings__input" type="number" value="${settings.tileFontSize}">
+					<label for="">px</label>
+				</div>	
+			</div>
+			<div class="settings__item">
+				<div class="settings__title">Колір лінії площини</div>
+				<input data-id="planeColor" class="settings__input" type="color" value="${settings.planeColor}">
+			</div>
+			<div class="settings__item">
+				<div class="settings__title">Колір лінії вирізу</div>
+				<input data-id="excisionColor" class="settings__input" type="color" value="${settings.excisionColor}">
+			</div>
+			<div class="settings__item">
+				<div class="settings__title">Колір стиків касет</div>
+				<input data-id="jointColor" class="settings__input" type="color" value="${settings.jointColor}">
+			</div>
+			<div class="settings__item">
+				<div class="settings__title">Колір дзеркала касет</div>
+				<input data-id="mirrorColor" class="settings__input" type="color" value="${settings.mirrorColor}">
+			</div>
+			<div class="settings__item">
+				<div class="settings__title">Колір активних касет</div>
+				<input data-id="activeTileColor" class="settings__input" type="color" value="${settings.activeTileColor}">
+			</div>
+		</div>
+	`);
+}
+
 function renderCanvas() {
-	// updateAppState();
+	checkButtons();
 	document.querySelector('.workarea').innerHTML = '<div class="canvas"></div>';
 	const canvas = document.querySelector('.canvas');
 	const planes = config.tabs.filter(item => item.type === 'plane');
@@ -742,6 +824,7 @@ function renderCanvas() {
 		planeElement.style.width = parseInt(window.getComputedStyle(canvas).width) - 100 + 'px';
 		planeElement.style.height = (parseInt(window.getComputedStyle(canvas).width) - 100) * plane.height / plane.width + 'px';
 	}
+	planeElement.style.borderColor = config.settings.planeColor;
 	let tilesElement = document.createElement('div');
 	tilesElement.classList.add('canvas__tiles');
 	let excisionsElement = document.createElement('div');
@@ -771,19 +854,21 @@ function renderTile(tile, ratio, tilesElement, plane) {
 	tileElement.style.left = tile.x * ratio + 'px';
 	tileElement.style.width = tile.width * ratio + 'px';
 	tileElement.style.height = tile.height * ratio + 'px';
-
 	let mirrorElement = document.createElement('div');
 	mirrorElement.classList.add('canvas__mirror');
 	if (tile.isActive) {
 		tileElement.classList.add('active');
-	} else {
+	}
+	if (plane.jointColor) {
 		tileElement.style.backgroundColor = plane.jointColor;
 	}
 	mirrorElement.style.top = tile.joint * ratio + 'px';
 	mirrorElement.style.left = tile.joint * ratio + 'px';
 	mirrorElement.style.width = (tile.width - tile.joint * 2) * ratio + 'px';
 	mirrorElement.style.height = (tile.height - tile.joint * 2) * ratio + 'px';
-	mirrorElement.style.backgroundColor = tile.color;
+	if (tile.color) {
+		mirrorElement.style.backgroundColor = tile.color;
+	}
 	mirrorElement.innerHTML = `${tile.width}<i class="bi-x"></i>${tile.height}`;
 	tileElement.appendChild(mirrorElement);
 	tilesElement.appendChild(tileElement);
@@ -949,15 +1034,16 @@ function openDropDown(btn) {
 
 document.addEventListener('DOMContentLoaded', function (event) {
 	checkButtons();
+	// меню - Файл
+	document.getElementById('removeAllTabs').addEventListener('click', removeAllTabs);
 	// меню - Площина
 	document.getElementById('removeAllExcisions').addEventListener('click', removeAllEcisions);
 	document.getElementById('clonePlane').addEventListener('click', clonePlane);
 	document.getElementById('removePlane').addEventListener('click', removeTab);
-	document.getElementById('removeAllPlanes').addEventListener('click', removeAllPlanes);
 	// меню - Розкладка
 	document.getElementById('addStandartTiles').addEventListener('click', addStandartTiles);
 	document.getElementById('removeTiles').addEventListener('click', removeTiles);
-	document.getElementById('fullReport').addEventListener('click', addFullReport);
+	document.getElementById('fullReport').addEventListener('click', openFullReport);
 	// меню - Редагування
 	document.getElementById('centerX').addEventListener('click', centerX);
 	document.getElementById('centerY').addEventListener('click', centerY);
@@ -1002,7 +1088,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
 			changeSelectionType(this);
 		});
 	})
-	document.querySelector('.sidebar').addEventListener('click', function (event) {
+	document.querySelector('.sidebar__group_panels').addEventListener('click', function (event) {
 		openPanel(event.target);
 	});
 	document.querySelectorAll('.dropdown').forEach(item => {
@@ -1021,6 +1107,11 @@ document.addEventListener('DOMContentLoaded', function (event) {
 			changeTileSize(event.target.id);
 		}
 	});
+	document.querySelector('.workarea').addEventListener('change', function (event) {
+		if (event.target.classList.contains('settings__input')) {
+			changeSettings(event.target);
+		}
+	});
 	document.getElementById('defaultColors').addEventListener('click', function (event) {
 		resetPlaneColors();
 	});
@@ -1033,6 +1124,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
 	document.querySelector('.control__step').addEventListener('change', function (event) {
 		changeStep(event.target);
 	});
+	document.getElementById('settings').addEventListener('click', openSettings);
 	for (let e of document.querySelectorAll('input[type="range"].slider-progress')) {
 		e.style.setProperty('--value', e.value);
 		e.style.setProperty('--min', e.min == '' ? '0' : e.min);
