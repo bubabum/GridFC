@@ -4,6 +4,7 @@ const config = {
 	file: null,
 	tabs: [],
 	activeTab: -1,
+	activePanel: null,
 	step: 10,
 	selectionType: 'row',
 }
@@ -159,7 +160,6 @@ function saveFile() {
 	const planes = getPlanes();
 	const tab = getActiveTab();
 	tab.isSaved = true;
-	console.log(ORDERS_PATH + config.file);
 	electron.writeFile(ORDERS_PATH + config.file, planes);
 	checkUnsavedFiles()
 }
@@ -254,11 +254,17 @@ function createTab(name, type, data) {
 	}
 	config.tabs.push(newTab);
 	changeActiveTab(config.tabs.length - 1);
+	if (type === 'settings') return
 	setState();
 }
 
 async function removeTab(id) {
 	const tabs = config.tabs;
+	if (typeof id === 'object') {
+		id = config.activeTab;
+	} else {
+		id = Number(id);
+	}
 	if (tabs[id].isSaved === false) {
 		let options = {
 			message: `Чи бажаете зберегти зміни внесені в '${config.file}'`,
@@ -269,23 +275,18 @@ async function removeTab(id) {
 		if (result === 'Відмінити') return
 		if (result === 'Зберегти') saveFile();
 	}
-	if (typeof id === 'object') {
-		id = config.activeTab;
+	tabs.splice(id, 1);
+	if (config.activeTab === id) { //якщо активна вкладка
+		if (id === tabs.length) { //якщо остання
+			changeActiveTab(id - 1);
+		} else { //якщо не остання
+			changeActiveTab(id);
+		}
 	} else {
-		id = Number(id);
-		tabs.splice(id, 1);
-		if (config.activeTab === id) { //якщо активна вкладка
-			if (id === tabs.length) { //якщо остання
-				changeActiveTab(id - 1);
-			} else { //якщо не остання
-				changeActiveTab(id);
-			}
+		if (id < config.activeTab) {
+			changeActiveTab(config.activeTab - 1);
 		} else {
-			if (id < config.activeTab) {
-				changeActiveTab(config.activeTab - 1);
-			} else {
-				changeActiveTab(config.activeTab);
-			}
+			changeActiveTab(config.activeTab);
 		}
 	}
 }
@@ -366,22 +367,26 @@ function addPlane() {
 }
 
 function removePlane(id) {
-	id = Number(id);
-	const activePlane = config.tabs[config.activeTab].activePlane;
-	const planes = config.tabs[config.activeTab].data;
+	const planes = getPlanes();
+	const activePlaneIndex = planes.indexOf(getActivePlane());
+	if (typeof id === 'object') {
+		id = activePlaneIndex;
+	} else {
+		id = Number(id);
+	}
 	planes.splice(id, 1);
 	setState();
-	if (activePlane === id) { //якщо активна вкладка
-		if (id === planes.length) { //якщо остання
+	if (activePlaneIndex === id) { // if the active tab
+		if (id === planes.length) { // if the last tab
 			changeActivePlane(id - 1);
-		} else { //якщо не остання
+		} else { // if not the last
 			changeActivePlane(id);
 		}
 	} else {
-		if (id < activePlane) {
-			changeActivePlane(activePlane - 1);
+		if (id < activePlaneIndex) {
+			changeActivePlane(activePlaneIndex - 1);
 		} else {
-			changeActivePlane(activePlane);
+			changeActivePlane(activePlaneIndex);
 		}
 	}
 }
@@ -501,6 +506,12 @@ function addTiles() {
 	renderApp();
 }
 
+function restorePlaneDXDY() {
+	const plane = getActivePlane();
+	plane.dX = 0;
+	plane.dY = 0;
+}
+
 function addStandartTiles() {
 	const settings = config.settings;
 	config.tile = {
@@ -508,24 +519,34 @@ function addStandartTiles() {
 		height: settings.standartTileHeight,
 		joint: settings.standartTileJoint,
 	}
+	restorePlaneDXDY()
 	addTiles();
 }
 
 function addCustomTiles() {
+	const width = Number(document.getElementById('tileWidth').value);
+	const height = Number(document.getElementById('tileHeight').value);
+	const joint = Number(document.getElementById('tileJoint').value);
+	if (width <= 0 || height <= 0 || joint <= 0) {
+		document.getElementById('tileWidth').value = config.tile.width;
+		document.getElementById('tileHeight').value = config.tile.height;
+		document.getElementById('tileJoint').value = config.tile.joint;
+		return showAlert("Розміри не можуть дорівнювати нулю чи бути від'ємними");
+	}
 	const tile = {
-		width: Number(document.getElementById('tileWidth').value),
-		height: Number(document.getElementById('tileHeight').value),
-		joint: Number(document.getElementById('tileJoint').value),
+		width: width,
+		height: height,
+		joint: joint,
 	}
 	config.tile = tile;
+	restorePlaneDXDY();
 	addTiles();
 }
 
 function removeTiles() {
 	const plane = getActivePlane();
-	plane.dX = 0;
-	plane.dY = 0;
 	plane.tiles = [];
+	restorePlaneDXDY();
 	setState();
 	renderApp();
 }
@@ -535,12 +556,16 @@ function setTileGrid() {
 	config.tile.joint = Number(document.getElementById('tileGridJoint').value);
 	const columns = Number(document.getElementById('columns').value);
 	const rows = Number(document.getElementById('rows').value);
+	if (columns <= 0 || rows <= 0) {
+		if (columns <= 0) document.getElementById('columns').value = 1;
+		if (rows <= 0) document.getElementById('rows').value = 1;
+		return showAlert("Кількість не може дорівнювати нулю чи бути від'ємною");
+	}
 	const tileWidth = Math.floor((plane.width - config.tile.joint) / columns) + config.tile.joint;
 	const tileHeight = Math.floor((plane.height - config.tile.joint) / rows) + config.tile.joint;
 	config.tile.width = tileWidth - tileWidth % 5;
 	config.tile.height = tileHeight - tileHeight % 5;
-	plane.dX = 0;
-	plane.dY = 0;
+	restorePlaneDXDY();
 	addTiles(columns, rows);
 }
 
@@ -559,7 +584,6 @@ function moveTiles(btn) {
 		case 'moveDown':
 			plane.dY += step; break;
 	}
-	//Можливо зробити тільки рендер, без додавання тайлів
 	addTiles();
 }
 
@@ -584,13 +608,9 @@ function trimLeft() {
 
 function trimRight() {
 	const plane = getActivePlane();
-	let firstColumnWidth = plane.tiles.find(item => item.column === 0).width;
 	plane.tiles.forEach((item) => {
 		if (item.column === Math.max(...plane.tiles.map(item => item.column))) {
 			item.width = plane.width - item.x;
-			if (item.width > firstColumnWidth) {
-				// item.width = firstColumnWidth;
-			}
 		}
 	})
 	setState();
@@ -611,13 +631,9 @@ function trimUp() {
 
 function trimDown() {
 	const plane = getActivePlane();
-	let firstRowHeight = plane.tiles.find(item => item.row === 0).height;
 	plane.tiles.forEach((item) => {
 		if (item.row === Math.max(...plane.tiles.map(item => item.row))) {
 			item.height = plane.height - item.y;
-			if (item.height !== firstRowHeight) {
-				// item.height = firstRowHeight;
-			}
 		}
 	})
 	setState();
@@ -652,144 +668,7 @@ function centerY() {
 	renderApp();
 }
 
-function changeStep() {
-	let newStep;
-	switch (Number(this.value)) {
-		case 0:
-			newStep = 5;
-			break;
-		case 1:
-			newStep = 10;
-			break;
-		case 2:
-			newStep = 50;
-			break;
-		case 3:
-			newStep = 100;
-			break;
-	}
-	config.step = newStep;
-	document.getElementById('stepLabel').innerHTML = `Крок ${newStep}мм`;
-}
-
-function calcPlaneArea(plane) {
-	let planeArea = plane.width / 1000 * plane.height / 1000;
-	let excisionsArea = 0;
-	if (plane.excisions.length > 0) {
-		excisionsArea = plane.excisions.map((item) => item.width / 1000 * item.height / 1000).reduce((acc, cur) => acc + cur);
-	}
-	let planeEffectiveArea = planeArea - excisionsArea;
-	return planeEffectiveArea;
-}
-
-function makePlaneMap(plane) {
-	if (plane.tiles.length === 0) return
-	let planeMap = plane.tiles.map((tile) => tile.width + '<i class="bi-x"></i>' + tile.height).reduce((acc, cur) => {
-		acc[cur] = (acc[cur] || 0) + 1;
-		return acc;
-	}, {})
-	return planeMap;
-}
-
-function calcTileArea(plane) {
-	if (plane.tiles.length === 0) return 0
-	let tileArea = plane.tiles.filter(item => !item.del).map(item => item.width / 1000 * item.height / 1000).reduce((acc, cur) => acc + cur);
-	return tileArea;
-}
-
-function calcFullReportData(planes) {
-	let planesData = [];
-	let allTiles = [];
-	planes.forEach(item => {
-		let planeData = {
-			width: item.width,
-			height: item.height,
-			area: calcPlaneArea(item),
-			tileArea: calcTileArea(item),
-		}
-		planesData.push(planeData);
-		allTiles.push(...item.tiles)
-	})
-	let fullArea = planesData.map(item => item.area).reduce((acc, cur) => acc + cur);
-	let fullTileArea = planesData.map(item => item.tileArea).reduce((acc, cur) => acc + cur);
-	let fullTileMap = allTiles.map((tile) => tile.width + '<i class="bi-x"></i>' + tile.height).reduce((acc, cur) => {
-		acc[cur] = (acc[cur] || 0) + 1;
-		return acc;
-	}, {})
-	let fullReportData = {
-
-		order: config.file.split('.').shift(),
-		planesData: planesData,
-		fullArea: fullArea,
-		fullTileArea: fullTileArea,
-		fullTileMap: fullTileMap,
-	};
-	return fullReportData;
-}
-
-function paintTile(tile) {
-	const plane = getActivePlane();
-	plane.tiles[Number(tile.closest('.canvas__tile').dataset.id)].color = document.getElementById('tileColor').value;
-	setState();
-	renderApp();
-}
-
-function setActiveTiles(tile) {
-	const plane = getActivePlane();
-	const tiles = plane.tiles;
-	const id = Number(tile.closest('.canvas__tile').dataset.id);
-	tiles.forEach(item => item.isActive = false);
-	switch (config.selectionType) {
-		case 'row':
-			const row = tiles[id].row;
-			tiles.forEach(item => {
-				if (item.row === row && !item.del) {
-					item.isActive = true;
-				}
-			});
-			break;
-		case 'column':
-			const column = tiles[id].column;
-			tiles.forEach(item => {
-				if (item.column === column && !item.del) {
-					item.isActive = true;
-				}
-			});
-			break;
-		case 'single':
-			tiles[id].isActive = true;
-			break;
-	}
-	renderApp();
-}
-
-function getTile(tile) {
-	let activePanel = document.querySelector('.sidebar').querySelector('.active').dataset.id;
-	switch (activePanel) {
-		case 'edit':
-			setActiveTiles(tile);
-			break;
-		case 'paint':
-			paintTile(tile);
-			break;
-		default: return
-	}
-}
-
-function changeJointColor(color) {
-	config.tabs[config.activeTab].data.jointColor = color.value;
-	setState();
-	renderApp();
-}
-
-function changeSelectionType() {
-	config.selectionType = this.value;
-	const plane = getActivePlane();
-	plane.tiles.forEach(item => item.isActive = false);
-	renderApp();
-}
-
-function changeTileSize(id) {
+function changeTile(id) {
 	const plane = getActivePlane();
 	const step = config.step
 	let row = plane.tiles.find(item => item.isActive === true).row;
@@ -860,10 +739,152 @@ function changeTileSize(id) {
 					item.x -= step;
 					item.width += step;
 				} break;
+			case 'tileRemove':
+				if (item.row === row && item.column === column) {
+					item.isRemoved = !item.isRemoved;
+				} break;
 		}
 	});
 	setState();
 	renderApp();
+}
+
+function changeStep() {
+	let newStep;
+	switch (Number(this.value)) {
+		case 0:
+			newStep = 5;
+			break;
+		case 1:
+			newStep = 10;
+			break;
+		case 2:
+			newStep = 50;
+			break;
+		case 3:
+			newStep = 100;
+			break;
+	}
+	config.step = newStep;
+	document.getElementById('stepLabel').innerHTML = `Крок ${newStep}мм`;
+}
+
+function changeSelectionType() {
+	config.selectionType = this.value;
+	const plane = getActivePlane();
+	if (plane) {
+		plane.tiles.forEach(item => item.isActive = false);
+		renderApp();
+	}
+}
+
+function getTile(tile) {
+	switch (config.activePanel) {
+		case 'edit':
+			setActiveTiles(tile);
+			break;
+		case 'paint':
+			paintTile(tile);
+			break;
+		default: return
+	}
+}
+
+function setActiveTiles(tile) {
+	const plane = getActivePlane();
+	const tiles = plane.tiles;
+	const id = Number(tile.closest('.canvas__tile').dataset.id);
+	tiles.forEach(item => item.isActive = false);
+	switch (config.selectionType) {
+		case 'row':
+			const row = tiles[id].row;
+			tiles.forEach(item => {
+				if (item.row === row && !item.del) {
+					item.isActive = true;
+				}
+			});
+			break;
+		case 'column':
+			const column = tiles[id].column;
+			tiles.forEach(item => {
+				if (item.column === column && !item.del) {
+					item.isActive = true;
+				}
+			});
+			break;
+		case 'single':
+			tiles[id].isActive = true;
+			break;
+	}
+	renderApp();
+}
+
+function paintTile(tile) {
+	const plane = getActivePlane();
+	plane.tiles[Number(tile.closest('.canvas__tile').dataset.id)].color = document.getElementById('tileColor').value;
+	setState();
+	renderApp();
+}
+
+function changeJointColor(color) {
+	const plane = getActivePlane();
+	plane.jointColor = color.value;
+	setState();
+	renderApp();
+}
+
+function calcPlaneArea(plane) {
+	let planeArea = plane.width / 1000 * plane.height / 1000;
+	let excisionsArea = 0;
+	if (plane.excisions.length > 0) {
+		excisionsArea = plane.excisions.map((item) => item.width / 1000 * item.height / 1000).reduce((acc, cur) => acc + cur);
+	}
+	let planeEffectiveArea = planeArea - excisionsArea;
+	return planeEffectiveArea;
+}
+
+function makePlaneMap(plane) {
+	if (plane.tiles.length === 0) return
+	let planeMap = plane.tiles.filter(item => !item.del && !item.isRemoved).map((tile) => tile.width + '<i class="bi-x"></i>' + tile.height).reduce((acc, cur) => {
+		acc[cur] = (acc[cur] || 0) + 1;
+		return acc;
+	}, {})
+	return planeMap;
+}
+
+function calcTileArea(plane) {
+	if (plane.tiles.length === 0) return 0
+	let tileArea = plane.tiles.filter(item => !item.del && !item.isRemoved).map(item => item.width / 1000 * item.height / 1000).reduce((acc, cur) => acc + cur);
+	return tileArea;
+}
+
+function calcFullReportData(planes) {
+	let planesData = [];
+	let allTiles = [];
+	planes.forEach(item => {
+		let planeData = {
+			width: item.width,
+			height: item.height,
+			area: calcPlaneArea(item),
+			tileArea: calcTileArea(item),
+		}
+		planesData.push(planeData);
+		allTiles.push(...item.tiles)
+	})
+	let fullArea = planesData.map(item => item.area).reduce((acc, cur) => acc + cur);
+	let fullTileArea = planesData.map(item => item.tileArea).reduce((acc, cur) => acc + cur);
+	let fullTileMap = allTiles.filter(tile => !tile.del && !tile.isRemoved).map((tile) => tile.width + '<i class="bi-x"></i>' + tile.height).reduce((acc, cur) => {
+		acc[cur] = (acc[cur] || 0) + 1;
+		return acc;
+	}, {})
+	let fullReportData = {
+		order: config.file.split('.').shift(),
+		planesData: planesData,
+		fullArea: fullArea,
+		fullTileArea: fullTileArea,
+		fullTileMap: fullTileMap,
+	};
+	return fullReportData;
 }
 
 function checkExcisions(plane) {
@@ -916,7 +937,6 @@ function resetPlaneColors() {
 	const plane = getActivePlane();
 	document.getElementById('jointColor').value = settings.jointColor;
 	document.getElementById('tileColor').value = settings.mirrorColor;
-	// if (!plane) return
 	plane.jointColor = settings.jointColor;
 	plane.tiles.forEach(item => item.color = settings.mirrorColor);
 	setState();
@@ -934,7 +954,7 @@ function openSettings() {
 }
 
 function renderTab(tab) {
-	document.querySelector('.workarea').innerHTML = '';
+	document.querySelector('.workarea').innerHTML = '<img class="workarea__img" src="./img/logo.png" alt="">';
 	document.querySelector('.planes__tabs').innerHTML = '';
 	document.querySelector('.excisions__tabs').innerHTML = '';
 	document.getElementById('report').querySelector('.control__report').innerHTML = '<div class="control__label control__label_center">Площина не задана</div>';
@@ -1092,8 +1112,12 @@ function renderCanvas(planes, activePlane) {
 	});
 	canvas.appendChild(planeElement);
 	if (plane.tiles.filter(item => item.isActive).length > 0) {
-		renderMoveButtons();
+		renderCanvasButtons();
 	}
+	canvas.insertAdjacentHTML('beforeend', `
+		<div class="canvas__size canvas__size_width">${plane.width}мм</div>
+		<div class="canvas__size canvas__size_height">${plane.height}мм</div>
+	`)
 }
 
 function renderTile(tile, ratio, tilesElement, plane) {
@@ -1112,8 +1136,14 @@ function renderTile(tile, ratio, tilesElement, plane) {
 	if (tile.isActive) {
 		tileElement.classList.add('active');
 	}
+	if (tile.isRemoved) {
+		tileElement.classList.add('removed');
+	}
 	if (plane.jointColor) {
 		tileElement.style.backgroundColor = plane.jointColor;
+	}
+	if (config.activePanel === 'edit' || config.activePanel === 'paint') {
+		mirrorElement.classList.add('selectable');
 	}
 	mirrorElement.style.top = tile.joint * ratio + 'px';
 	mirrorElement.style.left = tile.joint * ratio + 'px';
@@ -1197,9 +1227,8 @@ function renderFullReport() {
 	`);
 }
 
-function renderMoveButtons() {
+function renderCanvasButtons() {
 	const type = config.selectionType;
-	if (type === 'single') return
 	const plane = getActivePlane();
 	const minRow = Math.min(...plane.tiles.filter(item => item.isActive).map(item => item.row))
 	const minColumn = Math.min(...plane.tiles.filter(item => item.isActive).map(item => item.column));
@@ -1235,27 +1264,36 @@ function renderMoveButtons() {
 				<button id="tileRightIncrease" class="canvas__button bi bi-caret-right-fill" style="top: -25px; left: ${left + width + 3}px;"></button>
 			`)
 			break;
+		case 'single':
+			let icon = 'bi bi-trash3';
+			if (firstTileElement.classList.contains('removed')) {
+				icon = 'bi bi-arrow-counterclockwise';
+			}
+			document.querySelector('.canvas__plane').insertAdjacentHTML('beforeend', `
+				<button id="tileRemove" class="canvas__button ${icon}" style="top: ${top}px; left:${left + width}px;"></button>
+			`)
+			break;
 	}
 }
 
 function openPanel(btn) {
 	let plane = getActivePlane();
 	if (plane && plane.tiles.length > 0) {
-		console.log('test')
-		plane.tiles.forEach(item => item.isActive === false);
-		renderApp();
+		plane.tiles.forEach(item => item.isActive = false);
 	}
-
 	if (btn.classList.contains('active')) {
 		btn.classList.remove('active');
 		document.getElementById(btn.dataset.id).classList.remove('active');
 		document.querySelector('.control').classList.remove('active');
+		config.activePanel = null;
 	} else {
 		document.querySelectorAll('.control__item.active, .sidebar__btn.active').forEach(element => element.classList.remove('active'));
 		btn.classList.add('active');
 		document.getElementById(btn.dataset.id).classList.add('active');
 		document.querySelector('.control').classList.add('active');
+		config.activePanel = btn.dataset.id;
 	}
+	renderApp();
 }
 
 function openDropDown() {
@@ -1299,8 +1337,8 @@ function closeAlert() {
 }
 
 function exportToPDF() {
-	let planes = getPlanes();
-	let fullReportData = calcFullReportData(planes);
+	const planes = getPlanes();
+	const fullReportData = calcFullReportData(planes);
 	electron.exportToPDF(planes, fullReportData);
 }
 
@@ -1318,18 +1356,31 @@ async function showQuestion(options) {
 	return questionOptions.buttons[result.response]
 }
 
+async function showAppVersion() {
+	let result = await electron.getAppVersion();
+	let message = `
+		GridFC: ${result.version}<br>
+		Electron: ${result.versions.electron}<br>
+		Chromium: ${result.versions.chrome}<br>
+		Node.js: ${result.versions.node}<br>
+		OS: ${result.os}
+	`;
+	showAlert(message);
+}
+
 document.addEventListener('DOMContentLoaded', function (event) {
 	init();
 	// меню - Файл
 	document.getElementById('newFile').addEventListener('click', newFile);
 	document.getElementById('saveFile').addEventListener('click', saveFile);
 	document.getElementById('deleteFile').addEventListener('click', deleteFile);
+	document.getElementById('removeTab').addEventListener('click', removeTab);
 	document.getElementById('removeAllTabs').addEventListener('click', removeAllTabs);
 	document.getElementById('export').addEventListener('click', exportToPDF);
 	// меню - Площина
 	document.getElementById('removeAllExcisions').addEventListener('click', removeAllEcisions);
 	document.getElementById('clonePlane').addEventListener('click', clonePlane);
-	document.getElementById('removePlane').addEventListener('click', removeTab);
+	document.getElementById('removePlane').addEventListener('click', removePlane);
 	document.getElementById('addStandartTiles').addEventListener('click', addStandartTiles);
 	document.getElementById('removeTiles').addEventListener('click', removeTiles);
 	// меню - Редагування
@@ -1343,7 +1394,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
 	document.getElementById('trimUp').addEventListener('click', trimUp);
 	document.getElementById('trimDown').addEventListener('click', trimDown);
 	// меню - Довідка
-
+	document.getElementById('showAppVersion').addEventListener('click', showAppVersion);
 	// Вкладки
 	document.querySelector('.tabs').addEventListener('click', function (event) {
 		if (event.target.classList.contains('tabs__item')) {
@@ -1429,7 +1480,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
 			getTile(event.target);
 		}
 		if (event.target.classList.contains('canvas__button')) {
-			changeTileSize(event.target.id);
+			changeTile(event.target.id);
 		}
 		if (event.target.classList.contains('alert__close')) {
 			closeAlert();
@@ -1446,4 +1497,5 @@ document.addEventListener('DOMContentLoaded', function (event) {
 		e.style.setProperty('--max', e.max == '' ? '100' : e.max);
 		e.addEventListener('input', () => e.style.setProperty('--value', e.value));
 	}
+	showApp();
 });

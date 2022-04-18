@@ -4,7 +4,39 @@
 	"description": "application",
 	"main": "main.js",
 	"scripts": {
-		"start": "electron ."
+		"start": "electron .",
+		"build": "electron-builder"
+	},
+	"build": {
+		"productName": "GridFC",
+		"appId": "GridFC",
+		"mac": {
+			"category": "your.app.category.type"
+		},
+		"win": {
+			"target": "nsis",
+			"requestedExecutionLevel": "highestAvailable",
+			"icon": "./img/logo.png"
+		},
+		"directories": {
+			"output": "release-installer",
+			"app": ""
+		},
+		"nsis": {
+			"allowElevation": true,
+			"createDesktopShortcut": true,
+			"createStartMenuShortcut": true,
+			"runAfterFinish": true,
+			"deleteAppDataOnUninstall": true,
+			"oneClick": false,
+			"perMachine": true
+		},
+		"publish": [
+			{
+				"provider": "generic",
+				"url": ""
+			}
+		]
 	},
 	"repository": {
 		"type": "git",
@@ -17,7 +49,10 @@
 	},
 	"homepage": "https://github.com/bubabum/GridFC#readme",
 	"dependencies": {
-		"electron": "^18.0.3",
 		"pdfkit": "^0.13.0"
+	},
+	"devDependencies": {
+		"electron": "^18.0.3",
+		"electron-builder": "^23.0.3"
 	}
 }

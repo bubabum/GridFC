@@ -25,6 +25,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
 	showQuestion: async (options) => {
 		return await ipcRenderer.invoke('show-question', options);
 	},
+	getAppVersion: async () => {
+		return await ipcRenderer.invoke('get-app-version');
+	},
 	exportToPDF: async (planes, fullReportData) => {
 		const doc = new PDFDocument({ size: 'A4', layout: 'landscape' });
 		let options = {
@@ -62,7 +65,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 				if (tile.color) {
 					mirrorColor = tile.color;
 				}
-				if (tile.del === false) {
+				if (!tile.del && !tile.isRemoved) {
 					doc
 						.rect(tile.x * ratio + paddingLeft, tile.y * ratio + paddingTop, tile.width * ratio, tile.height * ratio)
 						.fill(jointColor)
@@ -83,16 +86,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
 				.rect(paddingLeft, paddingTop, width, height)
 				.stroke("#ff0000")
 				.fontSize(8)
-				.font(`./css/fonts/Montserrat-Medium.ttf`)
+				.font(path.join(__dirname, 'css/fonts/Montserrat-Medium.ttf'))
 				.text(`Площина ${i + 1} | Ширина: ${plane.width}мм | Висота: ${plane.height}мм`, 20, 20)
 				.addPage();
 		}
 		doc
 			.fillColor('#333333')
 			.fontSize(25)
-			.font(`./css/fonts/Montserrat-Medium.ttf`)
+			.font(path.join(__dirname, 'css/fonts/Montserrat-Medium.ttf'))
 			.text('Специфікація', 100, 50)
-			.font(`./css/fonts/Roboto-Regular.ttf`)
+			.font(path.join(__dirname, 'css/fonts/Roboto-Regular.ttf'))
 			.fontSize(8)
 			.text('GridFC', 780, 20)
 			.moveTo(20, 85)
@@ -111,9 +114,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
 		}
 		doc
 			.fontSize(16)
-			.font(`./css/fonts/Montserrat-Medium.ttf`)
+			.font(path.join(__dirname, 'css/fonts/Montserrat-Medium.ttf'))
 			.text('Фасадні касети:', 50, 150)
-			.font(`./css/fonts/Roboto-Regular.ttf`)
+			.font(path.join(__dirname, 'css/fonts/Roboto-Regular.ttf'))
 			.moveTo(20, 171)
 			.lineTo(421, 171)
 			.stroke("#333333")
@@ -132,9 +135,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
 		}
 		doc
 			.fontSize(16)
-			.font(`./css/fonts/Montserrat-Medium.ttf`)
+			.font(path.join(__dirname, 'css/fonts/Montserrat-Medium.ttf'))
 			.text('Площа:', 50, row + 20)
-			.font(`./css/fonts/Roboto-Regular.ttf`)
+			.font(path.join(__dirname, 'css/fonts/Roboto-Regular.ttf'))
 			.moveTo(20, row + 41)
 			.lineTo(421, row + 41)
 			.stroke("#333333")
