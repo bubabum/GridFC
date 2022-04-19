@@ -893,25 +893,15 @@ input[type=color]::-moz-color-swatch:hover {
 }
 
 .files__item {
-	display: block;
+	display: flex;
 	position: relative;
 	background-color: transparent;
 	color: #ddd;
 	padding: 5px;
-	/* font-size: 10px; */
 }
 
 .files__item::before {
 	padding-right: 5px;
-}
-
-.files__item input {
-	display: inline-block;
-	padding: 0;
-	margin: 0;
-	background-color: transparent;
-	border-style: none;
-	color: #ddd;
 }
 
 .files__item:hover {
@@ -935,9 +925,13 @@ input[type=color]::-moz-color-swatch:hover {
 
 
 .files__item input {
+	display: inline-block;
+	width: 90%;
 	padding: 0;
 	margin: 0;
-	/* font-family: var(--sub-font); */
+	background-color: transparent;
+	border-style: none;
+	color: #ddd;
 	font-size: 12px;
 }
 

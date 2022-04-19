@@ -9,8 +9,8 @@ const config = {
 	selectionType: 'row',
 }
 
-const SETTINGS_PATH = './settings.json';
-const ORDERS_PATH = './orders/';
+const SETTINGS_PATH = 'settings.json';
+const ORDERS_PATH = 'orders/';
 
 const electron = globalThis.electronAPI;
 
@@ -29,9 +29,14 @@ function getPlanes() {
 	return config.tabs[config.activeTab].data
 }
 
-function init() {
-	if (electron.checkFile(SETTINGS_PATH)) {
-		config.settings = electron.readFile(SETTINGS_PATH);
+function createFilePath(file) {
+	return file + '.json'
+}
+
+async function init() {
+	let settingsFileExist = await electron.invoke('check-file', SETTINGS_PATH);
+	if (settingsFileExist) {
+		config.settings = await electron.invoke('read-file', SETTINGS_PATH);
 	} else {
 		config.settings = {
 			minTileSize: 120,
@@ -45,17 +50,17 @@ function init() {
 			standartTileHeight: 585,
 			standartTileJoint: 15,
 		};
-		electron.writeFile(SETTINGS_PATH, config.settings);
+		saveSettings();
+	}
+	let ordersDirExist = await electron.invoke('check-file', ORDERS_PATH);
+	if (!ordersDirExist) {
+		await electron.invoke('create-dir', 'orders');
 	}
 	config.tile = {
 		width: config.settings.standartTileWidth,
 		height: config.settings.standartTileHeight,
 		joint: config.settings.standartTileJoint,
 	}
-	if (!electron.checkFile(ORDERS_PATH)) {
-		electron.createDir(ORDERS_PATH);
-	}
-
 	renderFiles();
 	renderApp();
 }
@@ -122,21 +127,20 @@ function applySettings() {
 
 function saveSettings() {
 	const settings = config.settings;
-	electron.writeFile(SETTINGS_PATH, settings);
+	electron.invoke('write-file', [SETTINGS_PATH, settings]);
 }
 
-function openFile(file) {
-	if (config.tabs.find(item => item.name === file.innerHTML + '.json')) return
-	let fileData = electron.readFile(`${ORDERS_PATH + file.innerHTML}.json`);
-	createTab(`${file.innerHTML}.json`, 'file', fileData);
-	config.file = `${file.innerHTML}.json`;
-	document.querySelector('.navigation__file').innerHTML = `${file.innerHTML}.json - GridFC`;
+async function openFile(file) {
+	const filePath = createFilePath(file.innerHTML);
+	if (config.tabs.find(item => item.name === filePath)) return
+	const fileData = await electron.invoke('read-file', ORDERS_PATH + filePath);
+	createTab(filePath, 'file', fileData);
+	setFile(filePath);
 }
 
-function newFile() {
-	renderFiles()
-	let filePanel = document.querySelector('[data-id="files"]');
-	if (!filePanel.classList.contains('active')) {
+async function newFile() {
+	await renderFiles();
+	if (config.activePanel !== 'files') {
 		openPanel(document.querySelector('[data-id="files"]'));
 	}
 	const files = document.querySelectorAll('.files__item');
@@ -148,19 +152,24 @@ function newFile() {
 	document.querySelector('.files__create').focus();
 }
 
-function createFile(input) {
-	electron.writeFile(`${ORDERS_PATH + input.value}.json`, []);
-	config.file = `${input.value}.json`;
-	document.querySelector('.navigation__file').innerHTML = `${input.value}.json - GridFC`;
-	createTab(`${input.value}.json`, 'file', [])
+async function createFile(input) {
+	const filePath = createFilePath(input.value);
+	await electron.invoke('write-file', [ORDERS_PATH + filePath, []]);
 	renderFiles();
+	createTab(filePath, 'file', []);
+	setFile(filePath);
 }
 
-function saveFile() {
+function setFile(filePath) {
+	config.file = filePath;
+	document.querySelector('.navigation__file').innerHTML = `${filePath} - GridFC`;
+}
+
+async function saveFile() {
 	const planes = getPlanes();
 	const tab = getActiveTab();
+	await electron.invoke('write-file', [ORDERS_PATH + config.file, planes]);
 	tab.isSaved = true;
-	electron.writeFile(ORDERS_PATH + config.file, planes);
 	checkUnsavedFiles()
 }
 
@@ -181,7 +190,7 @@ async function deleteFile() {
 	}
 	let result = await showQuestion(options);
 	if (result === 'Відмінити') return
-	electron.deleteFile(ORDERS_PATH + config.file);
+	await electron.invoke('delete-file', ORDERS_PATH + config.file);
 	renderFiles();
 	const tab = getActiveTab();
 	removeTab(config.tabs.indexOf(tab));
@@ -198,7 +207,8 @@ async function deleteExplorerFile() {
 	}
 	let result = await showQuestion(options);
 	if (result === 'Відмінити') return
-	electron.deleteFile(ORDERS_PATH + file.innerHTML + '.json');
+	const filePath = createFilePath(file.innerHTML);
+	await electron.invoke('delete-file', ORDERS_PATH + filePath);
 	renderFiles();
 	const openedTab = config.tabs.find(item => item.name === `${file.innerHTML}.json`);
 	if (openedTab) {
@@ -216,23 +226,23 @@ function renameFile() {
 	file.querySelector('input').select();
 }
 
-function changeFileName(input) {
-	electron.renameFile(`${ORDERS_PATH + input.dataset.name}.json`, `${ORDERS_PATH + input.value}.json`);
-	if (config.file === `${input.dataset.name}.json`) {
-		document.querySelector('.navigation__file').innerHTML = `${input.value}.json - GridFC`;
-		config.file = `${input.value}.json`;
+async function changeFileName(input) {
+	const oldFilePath = createFilePath(input.dataset.name);
+	const newFilePath = createFilePath(input.value);
+	await electron.invoke('rename-file', [ORDERS_PATH + oldFilePath, ORDERS_PATH + newFilePath]);
+	if (config.file === oldFilePath) {
+		setFile(newFilePath)
 	}
-	const openedTab = config.tabs.find(item => item.name === `${input.dataset.name}.json`)
+	const openedTab = config.tabs.find(item => item.name === oldFilePath)
 	if (openedTab) {
-		openedTab.name = `${input.value}.json`
+		openedTab.name = newFilePath;
 	}
 	renderTabs();
 	renderFiles();
-
 }
 
-function renderFiles() {
-	const files = electron.readDir(ORDERS_PATH);
+async function renderFiles() {
+	const files = await electron.invoke('read-dir', ORDERS_PATH);
 	const filesElement = document.querySelector('.files__items')
 	filesElement.innerHTML = '';
 	files.forEach(item => {
@@ -1336,10 +1346,10 @@ function closeAlert() {
 	document.querySelector('.alert').remove();
 }
 
-function exportToPDF() {
+async function exportToPDF() {
 	const planes = getPlanes();
 	const fullReportData = calcFullReportData(planes);
-	electron.exportToPDF(planes, fullReportData);
+	await electron.invoke('export-to-pdf', [planes, fullReportData]);
 }
 
 async function showQuestion(options) {
@@ -1352,12 +1362,12 @@ async function showQuestion(options) {
 		normalizeAccessKeys: true,
 		noLink: true,
 	};
-	let result = await electron.showQuestion(questionOptions);
+	let result = await electron.invoke('show-question', questionOptions);
 	return questionOptions.buttons[result.response]
 }
 
 async function showAppVersion() {
-	let result = await electron.getAppVersion();
+	let result = await electron.invoke('get-app-version');
 	let message = `
 		GridFC: ${result.version}<br>
 		Electron: ${result.versions.electron}<br>
@@ -1497,5 +1507,4 @@ document.addEventListener('DOMContentLoaded', function (event) {
 		e.style.setProperty('--max', e.max == '' ? '100' : e.max);
 		e.addEventListener('input', () => e.style.setProperty('--value', e.value));
 	}
-	showApp();
 });
