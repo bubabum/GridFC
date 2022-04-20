@@ -28,6 +28,7 @@ function createWindow() {
 			nodeIntegration: false, // is default value after Electron v5
 			contextIsolation: true, // protect against prototype pollution
 			enableRemoteModule: false, // turn off remote
+			devTools: false,
 			preload: path.join(__dirname, 'preload.js'),
 		},
 	});
@@ -138,8 +139,8 @@ function createWindow() {
 						.rect(tile.x * ratio + paddingLeft + joint, tile.y * ratio + paddingTop + joint, tile.width * ratio - joint * 2, tile.height * ratio - joint * 2)
 						.fill(mirrorColor)
 						.fillColor('#333333')
-						.fontSize(8)
-						.text(`${tile.width}x${tile.height}`, tile.x * ratio + paddingLeft + 10, tile.y * ratio + paddingTop + 10, { lineBreak: false });
+						.fontSize(6)
+						.text(`${tile.width}x${tile.height}`, tile.x * ratio + paddingLeft + 5, tile.y * ratio + paddingTop + 5, { lineBreak: false });
 				}
 			}
 			for (let j = 0; j < plane.excisions.length; j++) {

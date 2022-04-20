@@ -18,10 +18,13 @@
 			"icon": "./img/logo.png"
 		},
 		"directories": {
-			"output": "release-installer",
+			"output": "dist",
 			"app": ""
 		},
 		"nsis": {
+			"installerSidebar": "./img/win-installer-sidebar.bmp",
+			"uninstallerSidebar": "./img/win-installer-sidebar.bmp",
+			"allowToChangeInstallationDirectory": true,
 			"allowElevation": true,
 			"createDesktopShortcut": true,
 			"createStartMenuShortcut": true,
