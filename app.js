@@ -7,6 +7,10 @@ const config = {
 	activePanel: null,
 	step: 10,
 	selectionType: 'row',
+	inputs: [],
+	zoom: 1,
+	transformOriginX: 0,
+	transformOriginY: 0,
 }
 
 const SETTINGS_PATH = 'settings.json';
@@ -184,7 +188,7 @@ function checkUnsavedFiles() {
 
 async function deleteFile() {
 	let options = {
-		message: `Ви впевнені, що хочете видалити файл '${config.file.split('/').pop()}'`,
+		message: `Ви впевнені, що хочете видалити файл '${config.file}'`,
 		detail: 'Ви зможете відновити його зі смітника.',
 		buttons: ['Видалити', 'Відмінити'],
 	}
@@ -201,7 +205,7 @@ async function deleteExplorerFile() {
 	const file = document.querySelector('.files__item.active');
 	if (!file) return
 	let options = {
-		message: `Ви впевнені, що хочете видалити файл '${file.innerHTM}.json'`,
+		message: `Ви впевнені, що хочете видалити файл '${createFilePath(file.innerHTML)}'`,
 		detail: 'Ви зможете відновити його зі смітника.',
 		buttons: ['Видалити', 'Відмінити'],
 	}
@@ -754,6 +758,10 @@ function changeTile(id) {
 					item.isRemoved = !item.isRemoved;
 				} break;
 		}
+		if (item.width < 5 || item.height < 5) {
+			if (item.width < 5) item.width = 5;
+			if (item.height < 5) item.height = 5;
+		}
 	});
 	setState();
 	renderApp();
@@ -1128,6 +1136,8 @@ function renderCanvas(planes, activePlane) {
 		<div class="canvas__size canvas__size_width">${plane.width}мм</div>
 		<div class="canvas__size canvas__size_height">${plane.height}мм</div>
 	`)
+	canvas.style.transform = `scale(${config.zoom})`;
+	canvas.style.transformOrigin = `${config.transformOriginX}% ${config.transformOriginY}%`;
 }
 
 function renderTile(tile, ratio, tilesElement, plane) {
@@ -1378,6 +1388,61 @@ async function showAppVersion() {
 	showAlert(message);
 }
 
+function zoomMove(event) {
+	const canvas = document.querySelector('.canvas');
+	if (!config.inputs.includes('Space') || !canvas) return
+	document.body.classList.add('grabbing');
+	let [startX, startY] = [event.pageX, event.pageY];
+	function moveAtPoint(event) {
+		const originX = (startX - event.pageX) / window.innerWidth * 500 / config.zoom;
+		const originY = (startY - event.pageY) / window.innerHeight * 500 / config.zoom;
+		config.transformOriginX += originX;
+		config.transformOriginY += originY;
+		if (config.transformOriginX < 0) config.transformOriginX = 0;
+		if (config.transformOriginY < 0) config.transformOriginY = 0;
+		if (config.transformOriginX > 100) config.transformOriginX = 100;
+		if (config.transformOriginY > 100) config.transformOriginY = 100;
+		canvas.style.transformOrigin = `${config.transformOriginX}% ${config.transformOriginY}%`;
+		startX = event.pageX;
+		startY = event.pageY;
+	}
+	document.onmousemove = function (event) {
+		moveAtPoint(event);
+	};
+	document.onmouseup = function () {
+		document.onmousemove = null;
+		document.onmouseup = null;
+		document.body.classList.remove('grabbing');
+	};
+}
+
+function changeZoom(event) {
+	if (!config.inputs.includes('ControlLeft')) return
+	config.zoom -= event.deltaY / Math.abs(event.deltaY) * 0.1
+	if (config.zoom > 2.5) config.zoom = 2.5;
+	if (config.zoom < 1) config.zoom = 1;
+	renderApp();
+}
+
+function keyHandler(event) {
+	const keys = ['Space', 'ControlLeft'];
+	if (!keys.includes(event.code)) return
+	switch (event.type) {
+		case 'keydown':
+			if (config.inputs.includes(event.code)) return
+			config.inputs.push(event.code);
+			break
+
+		case 'keyup':
+			config.inputs.splice(config.inputs.indexOf(event.code), 1)
+			break
+	}
+	document.body.classList.remove('grab');
+	if (config.inputs.includes('Space') && config.zoom > 1) {
+		document.body.classList.add('grab');
+	}
+}
+
 document.addEventListener('DOMContentLoaded', function (event) {
 	init();
 	// меню - Файл
@@ -1500,6 +1565,18 @@ document.addEventListener('DOMContentLoaded', function (event) {
 		if (event.target.classList.contains('settings__input')) {
 			changeSettings(event.target);
 		}
+	});
+	document.querySelector('.workarea').addEventListener('mousedown', function (event) {
+		zoomMove(event);
+	});
+	document.addEventListener('wheel', function (event) {
+		changeZoom(event);
+	});
+	document.addEventListener('keydown', function (event) {
+		keyHandler(event);
+	});
+	document.addEventListener('keyup', function (event) {
+		keyHandler(event);
 	});
 	for (let e of document.querySelectorAll('input[type="range"].slider-progress')) {
 		e.style.setProperty('--value', e.value);

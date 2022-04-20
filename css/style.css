@@ -115,6 +115,15 @@ h6 {
 	font-weight: 400;
 }
 
+body.grab {
+	cursor: grab;
+}
+
+body.grabbing {
+	cursor: grabbing;
+
+}
+
 .wrapper {
 	position: relative;
 	display: grid;
