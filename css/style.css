@@ -209,7 +209,7 @@ nav {
 }
 
 .dropdown__menu {
-	width: 200px;
+	width: 300px;
 	top: 25px;
 	left: 0;
 	position: absolute;
@@ -240,6 +240,7 @@ nav {
 	border-style: none;
 	padding: 5px 20px;
 	display: flex;
+	justify-content: space-between;
 	width: 100%;
 	font-size: 12px;
 	color: var(--text-color);
@@ -251,6 +252,11 @@ nav {
 
 .dropdown__item:hover {
 	background-color: var(--active-light-color);
+}
+
+.dropdown__item::after {
+	content: attr(data-hotkeys);
+	display: block;
 }
 
 .dropdown__divider {
