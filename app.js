@@ -337,7 +337,8 @@ async function init() {
 
 	function setState() {
 		const tab = getActiveTab();
-		const activePlane = getActivePlane();
+		const planes = getPlanes();
+		const activePlaneIndex = planes.indexOf(getActivePlane());
 		const newState = tab.data.map(item => JSON.parse(JSON.stringify(item)));
 		if (tab.states.length === 10) {
 			tab.states.shift();
@@ -345,7 +346,7 @@ async function init() {
 		if (tab.activeState < tab.states.length - 1) {
 			tab.states.splice(tab.activeState + 1);
 		}
-		tab.states.push({ activePlane: activePlane, state: newState });
+		tab.states.push({ activePlane: activePlaneIndex, state: newState });
 		tab.activeState = tab.states.length - 1;
 		if (tab.activeState > 0) {
 			tab.isSaved = false;
